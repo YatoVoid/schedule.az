@@ -1,0 +1,15 @@
+services:
+  db:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: schedule
+      POSTGRES_PASSWORD: schedule
+      POSTGRES_DB: schedule
+    ports:
+      - "5433:5432"
+    volumes:
+      - schedule_db_data:/var/lib/postgresql/data
+
+volumes:
+  schedule_db_data:

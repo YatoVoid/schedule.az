@@ -1,0 +1,2 @@
+-- AlterTable
+ALTER TABLE "Booking" ADD COLUMN "clientSeenStatusAt" TIMESTAMP(3) DEFAULT CURRENT_TIMESTAMP;
