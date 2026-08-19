@@ -34,7 +34,7 @@ Purpose-built for how Baku service businesses actually operate today (WhatsApp-b
 - Phone-first OTP auth; email-OTP is the fallback identity, mainly for tourists booking as consumers.
 - A staff member is only bookable once they have actual working hours set; being an admin/owner does not make someone bookable by itself.
 - Only one logo image exists per store today (`storage/logos/{id}`, served via `src/app/api/logos/[storeId]/route.ts`); there is no multi-photo gallery yet. This design pass adds one: business owners will be able to upload multiple photos of their business, cycling as a carousel on their homepage directory card, framed like scanning listings on a map app to pick the right business.
-- Not built yet: real SMS/WhatsApp vendor, payment collection, add-to-calendar (.ics) export.
+- Not built yet: real SMS/WhatsApp vendor, payment collection, add-to-calendar (.ics) export, an Instagram-style account-creation step (choose a username, add a profile picture — accounts currently have neither), and a dedicated mobile-friendliness audit across every surface (consumer directory, booking flow, admin/staff dashboards).
 - No formal test runner; `scripts/` holds standalone `npx tsx scripts/<name>.ts` checks run against a local database.
 
 ## Brand Commitments

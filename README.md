@@ -8,7 +8,7 @@ Only staff who've actually set working hours show up as bookable, being an admin
 
 **Consumer side**: a public store page at `/{slug}` (e.g. `/kingston-test`) that's also the link businesses share on Instagram, a real booking engine (`src/lib/schedule.ts`, `src/lib/booking-slots.ts`) that computes actual open time slots *and* which calendar days have any opening at all (so the customer never clicks through empty days), inline phone/email OTP + name collection during the first booking (no separate signup step, name changeable later from the account page), and a `/account` area (upcoming, favorites, past, with reschedule/cancel). Declined or accepted bookings surface as an unread-style notification, with the staff's message, until the customer actually opens that tab. The directory homepage (`/`) lists every store with search (business name, category, or staff name) and a category filter.
 
-Not built yet: a real SMS/WhatsApp vendor (currently console-log stubs), payment collection, and add-to-calendar (.ics) export.
+Not built yet: a real SMS/WhatsApp vendor (currently console-log stubs), payment collection, add-to-calendar (.ics) export, an Instagram-style signup step (username + profile picture, currently accounts have neither), and a pass to confirm every page is actually mobile-friendly rather than just responsive by default.
 
 ## Stack
 
