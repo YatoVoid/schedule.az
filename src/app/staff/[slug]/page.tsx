@@ -32,7 +32,8 @@ export default async function StaffCalendarPage({
   const bookingRows: BookingRow[] = bookings.map((b) => ({
     id: b.id,
     serviceName: b.service.name,
-    customerName: b.user.name ?? b.user.phone ?? b.user.email ?? "Customer",
+    customerName: b.user.name ?? "Customer",
+    customerContact: b.user.phone ?? b.user.email ?? null,
     startAt: b.startAt.toISOString(),
     status: b.status,
     rescheduledAt: b.rescheduledAt ? b.rescheduledAt.toISOString() : null,

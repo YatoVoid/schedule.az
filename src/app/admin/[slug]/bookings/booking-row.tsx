@@ -12,6 +12,7 @@ export type AdminBookingRow = {
   id: string;
   serviceName: string;
   customerName: string;
+  customerContact: string | null;
   staffName: string;
   startAt: string;
   status: "PENDING_CONFIRMATION" | "CONFIRMED" | "DECLINED" | "CANCELLED" | "COMPLETED";
@@ -69,6 +70,9 @@ export function AdminBookingRow({
           <p className="text-sm text-muted-foreground">
             {booking.customerName} with {booking.staffName}
           </p>
+          {booking.customerContact && (
+            <p className="text-sm text-muted-foreground">{booking.customerContact}</p>
+          )}
           <p className="text-sm text-muted-foreground">{new Date(booking.startAt).toLocaleString()}</p>
           {booking.priceAzn && <p className="text-sm text-muted-foreground">Charged {booking.priceAzn} AZN</p>}
         </div>

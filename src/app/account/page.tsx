@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { prisma } from "@/lib/prisma";
-import { requireUser } from "@/lib/auth";
+import { requireUser, getUserMemberships } from "@/lib/auth";
 import { SiteHeader } from "@/components/site-header";
 import { ProfileName } from "./profile-name";
 import { AccountTabs } from "./account-tabs";
@@ -8,6 +8,7 @@ import type { AccountBooking } from "./booking-row";
 
 export default async function AccountPage() {
   const user = await requireUser("/account");
+  const memberships = await getUserMemberships(user.id);
 
   const [upcoming, past, favorites] = await Promise.all([
     prisma.booking.findMany({
@@ -44,7 +45,7 @@ export default async function AccountPage() {
 
   return (
     <div className="flex min-h-screen flex-col bg-secondary/30">
-      <SiteHeader loggedIn showAccountLink={false} />
+      <SiteHeader loggedIn showAccountLink={false} memberships={memberships} />
       <main className="mx-auto flex w-full max-w-2xl flex-1 flex-col gap-6 px-4 py-8">
         <div>
           <Link href="/" className="text-sm text-muted-foreground underline underline-offset-4">

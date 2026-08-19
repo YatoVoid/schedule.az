@@ -40,7 +40,8 @@ export default async function AdminBookingsPage({
     return {
       id: b.id,
       serviceName: b.service.name,
-      customerName: b.user.name ?? b.user.phone ?? b.user.email ?? "Customer",
+      customerName: b.user.name ?? "Customer",
+      customerContact: b.user.phone ?? b.user.email ?? null,
       staffName: b.storeMember.user.name ?? b.storeMember.user.phone ?? "Staff",
       startAt: b.startAt.toISOString(),
       status: b.status,

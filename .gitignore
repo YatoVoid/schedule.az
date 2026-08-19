@@ -40,3 +40,6 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# impeccable design tool: local review screenshots, hook cache, decision logs
+/.impeccable/

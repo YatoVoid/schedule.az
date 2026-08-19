@@ -22,8 +22,12 @@ export async function createStoreAction(input: {
     return { ok: false, error: parsed.error.issues[0].message };
   }
 
-  const existing = await prisma.storeMember.findFirst({ where: { userId: user.id } });
-  if (existing) redirect("/onboarding");
+  // Only blocks someone who already owns a business — staff-only members
+  // (and plain consumers) are allowed through, so a person who works
+  // somewhere can still start their own; they end up an ADMIN of the new
+  // store and keep their existing STAFF membership elsewhere.
+  const existingAdmin = await prisma.storeMember.findFirst({ where: { userId: user.id, role: "ADMIN" } });
+  if (existingAdmin) redirect("/onboarding");
 
   const slug = await generateUniqueStoreSlug(parsed.data.name);
 

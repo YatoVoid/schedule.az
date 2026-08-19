@@ -3,10 +3,13 @@ import Link from "next/link";
 import { prisma } from "@/lib/prisma";
 import { getCurrentUser } from "@/lib/auth";
 import { storeLogoUrl } from "@/lib/logo";
+import { storeImageUrl } from "@/lib/store-images";
+import { categoryGuardVar } from "@/lib/category-color";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { FavoriteButton } from "@/components/favorite-button";
 import { ServiceList } from "@/components/service-list";
+import { StoreGallery } from "@/components/store-gallery";
 import { BookingFlow } from "./booking-flow";
 
 export default async function StorePage({
@@ -23,6 +26,7 @@ export default async function StorePage({
       // hours configured does. Otherwise an owner who just manages the shop
       // shows up as bookable by default, which isn't what most owners want.
       members: { where: { availability: { some: {} } }, include: { user: true }, orderBy: { role: "asc" } },
+      images: { orderBy: { position: "asc" } },
     },
   });
   if (!store) notFound();
@@ -33,12 +37,16 @@ export default async function StorePage({
     : null;
 
   const logoUrl = storeLogoUrl(store.id, store.logoUpdatedAt);
+  const guard = categoryGuardVar(store.category);
+  const galleryImages = store.images.map((img) => storeImageUrl(store.id, img));
 
   return (
     <main className="mx-auto flex w-full max-w-2xl flex-col gap-6 px-4 py-8">
       <Link href="/" className="text-sm text-muted-foreground underline underline-offset-4">
         ← All businesses
       </Link>
+
+      {galleryImages.length > 0 && <StoreGallery images={galleryImages} guard={guard} />}
 
       <div className="flex items-start gap-4">
         <Avatar className="h-16 w-16 shrink-0">

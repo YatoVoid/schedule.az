@@ -55,7 +55,13 @@ export function SettingsForm({
   }
 
   return (
-    <div className="flex flex-col gap-5">
+    <form
+      className="flex flex-col gap-5"
+      onSubmit={(e) => {
+        e.preventDefault();
+        if (!isPending) handleSubmit();
+      }}
+    >
       <div className="flex flex-col gap-2">
         <Label>Logo</Label>
         <LogoUploader slug={slug} storeName={name} initialLogoUrl={initial.logoUrl} />
@@ -78,9 +84,9 @@ export function SettingsForm({
         <Textarea id="description" value={description} onChange={(e) => setDescription(e.target.value)} />
       </div>
 
-      <Button size="lg" className="h-12 text-base" onClick={handleSubmit} disabled={isPending}>
+      <Button type="submit" size="lg" className="h-12 text-base" disabled={isPending}>
         {isPending ? "Saving..." : "Save changes"}
       </Button>
-    </div>
+    </form>
   );
 }

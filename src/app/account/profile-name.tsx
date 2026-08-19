@@ -27,7 +27,13 @@ export function ProfileName({ initialName, identifier }: { initialName: string |
 
   if (editing) {
     return (
-      <div className="flex items-center gap-2">
+      <form
+        className="flex items-center gap-2"
+        onSubmit={(e) => {
+          e.preventDefault();
+          if (!isPending && name.trim().length >= 2) save();
+        }}
+      >
         <Input
           value={name}
           onChange={(e) => setName(e.target.value)}
@@ -35,13 +41,13 @@ export function ProfileName({ initialName, identifier }: { initialName: string |
           className="h-9 max-w-48 text-sm"
           autoFocus
         />
-        <Button size="sm" disabled={isPending || name.trim().length < 2} onClick={save}>
+        <Button type="submit" size="sm" disabled={isPending || name.trim().length < 2}>
           Save
         </Button>
-        <Button size="sm" variant="ghost" onClick={() => setEditing(false)}>
+        <Button type="button" size="sm" variant="ghost" onClick={() => setEditing(false)}>
           Cancel
         </Button>
-      </div>
+      </form>
     );
   }
 

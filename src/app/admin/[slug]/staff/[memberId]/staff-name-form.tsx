@@ -44,21 +44,29 @@ export function StaffNameForm({
           <Badge variant={role === "ADMIN" ? "default" : "outline"}>{role === "ADMIN" ? "Admin" : "Staff"}</Badge>
         </div>
       </CardHeader>
-      <CardContent className="flex flex-col gap-4">
-        <div className="flex flex-col gap-2">
-          <Label htmlFor="staff-name">Name</Label>
-          <Input
-            id="staff-name"
-            placeholder="Unnamed"
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-            className="h-12 text-base"
-          />
-        </div>
-        <p className="text-sm text-muted-foreground">Logs in with {phone ?? email}</p>
-        <Button onClick={handleSave} disabled={isPending} className="h-11 self-start text-sm">
-          {isPending ? "Saving..." : "Save"}
-        </Button>
+      <CardContent>
+        <form
+          className="flex flex-col gap-4"
+          onSubmit={(e) => {
+            e.preventDefault();
+            if (!isPending) handleSave();
+          }}
+        >
+          <div className="flex flex-col gap-2">
+            <Label htmlFor="staff-name">Name</Label>
+            <Input
+              id="staff-name"
+              placeholder="Unnamed"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              className="h-12 text-base"
+            />
+          </div>
+          <p className="text-sm text-muted-foreground">Logs in with {phone ?? email}</p>
+          <Button type="submit" disabled={isPending} className="h-11 self-start text-sm">
+            {isPending ? "Saving..." : "Save"}
+          </Button>
+        </form>
       </CardContent>
     </Card>
   );

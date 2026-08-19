@@ -43,7 +43,13 @@ export function OnboardingForm() {
   }
 
   return (
-    <div className="flex flex-col gap-5">
+    <form
+      className="flex flex-col gap-5"
+      onSubmit={(e) => {
+        e.preventDefault();
+        if (!isPending) handleSubmit();
+      }}
+    >
       <div className="flex flex-col gap-2">
         <Label htmlFor="name">Business name</Label>
         <Input
@@ -75,13 +81,13 @@ export function OnboardingForm() {
       {error && <p className="text-sm text-destructive">{error}</p>}
 
       <Button
+        type="submit"
         size="lg"
         className="h-12 text-base"
-        onClick={handleSubmit}
         disabled={isPending || !name.trim() || !category}
       >
         {isPending ? "Creating..." : "Create my business page"}
       </Button>
-    </div>
+    </form>
   );
 }

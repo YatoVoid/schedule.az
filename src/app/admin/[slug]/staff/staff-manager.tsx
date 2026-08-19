@@ -17,7 +17,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { isDevTestPhone } from "@/lib/phone";
-import { inviteStaffAction, removeStaffAction } from "./actions";
+import { sendStaffInviteCodeAction, confirmStaffInviteAction, removeStaffAction } from "./actions";
 
 type MemberRow = { id: string; phone: string | null; name: string | null; role: "ADMIN" | "STAFF" };
 
@@ -31,17 +31,37 @@ export function StaffManager({
   currentMemberId: string;
 }) {
   const [phone, setPhone] = useState("");
+  const [code, setCode] = useState("");
   const [role, setRole] = useState<"ADMIN" | "STAFF">("STAFF");
+  const [codeSent, setCodeSent] = useState(false);
   const [isPending, startTransition] = useTransition();
 
-  function handleInvite() {
+  function handleSendCode() {
     startTransition(async () => {
-      const result = await inviteStaffAction(slug, phone, role);
+      const result = await sendStaffInviteCodeAction(slug, phone);
+      if (!result.ok) {
+        toast.error(result.error);
+        return;
+      }
+      setCodeSent(true);
+      toast.success(
+        isDevTestPhone(phone)
+          ? "Dev phone — enter code 0000"
+          : "Code sent. Have them read it back to you.",
+      );
+    });
+  }
+
+  function handleConfirm() {
+    startTransition(async () => {
+      const result = await confirmStaffInviteAction(slug, phone, code, role);
       if (!result.ok) {
         toast.error(result.error);
         return;
       }
       setPhone("");
+      setCode("");
+      setCodeSent(false);
       toast.success(role === "ADMIN" ? "Admin added" : "Staff member added");
     });
   }
@@ -53,49 +73,91 @@ export function StaffManager({
     });
   }
 
+  const phoneValid = isDevTestPhone(phone) || phone.trim().length >= 9;
+
   return (
     <div className="flex flex-col gap-6">
       <Card>
         <CardHeader>
           <CardTitle className="text-lg">Add to your team</CardTitle>
         </CardHeader>
-        <CardContent className="flex flex-col gap-4">
-          <div className="flex flex-col gap-2">
-            <Label htmlFor="staff-phone">Phone number</Label>
-            <Input
-              id="staff-phone"
-              inputMode="tel"
-              placeholder="050 123 45 67"
-              value={phone}
-              onChange={(e) => setPhone(e.target.value)}
-              className="h-12 text-base"
-            />
-            <p className="text-xs text-muted-foreground">
-              They log in with this number and land on their own dashboard.
-            </p>
-          </div>
-          <div className="flex flex-col gap-2">
-            <Label htmlFor="staff-role">Role</Label>
-            <Select value={role} onValueChange={(v) => setRole((v as "ADMIN" | "STAFF") ?? "STAFF")}>
-              <SelectTrigger id="staff-role" className="h-12 text-base">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="STAFF">Staff</SelectItem>
-                <SelectItem value="ADMIN">Admin</SelectItem>
-              </SelectContent>
-            </Select>
-            <p className="text-xs text-muted-foreground">
-              {role === "ADMIN" ? "Full access, same as you." : "Sees only their own calendar and bookings."}
-            </p>
-          </div>
-          <Button
-            onClick={handleInvite}
-            disabled={isPending || (!isDevTestPhone(phone) && phone.trim().length < 9)}
-            className="h-12 text-base"
+        <CardContent>
+          <form
+            className="flex flex-col gap-4"
+            onSubmit={(e) => {
+              e.preventDefault();
+              if (isPending) return;
+              if (!codeSent) handleSendCode();
+              else handleConfirm();
+            }}
           >
-            Add to team
-          </Button>
+            <div className="flex flex-col gap-2">
+              <Label htmlFor="staff-phone">Phone number</Label>
+              <Input
+                id="staff-phone"
+                inputMode="tel"
+                placeholder="050 123 45 67"
+                value={phone}
+                disabled={codeSent}
+                onChange={(e) => setPhone(e.target.value)}
+                className="h-12 text-base"
+              />
+              <p className="text-xs text-muted-foreground">
+                {codeSent
+                  ? "A code was sent to this number. Have them read it back to you below."
+                  : "They'll get a verification code first, so you can only add a number the person actually holds."}
+              </p>
+            </div>
+
+            {codeSent && (
+              <div className="flex flex-col gap-2">
+                <Label htmlFor="staff-code">Verification code</Label>
+                <Input
+                  id="staff-code"
+                  inputMode="numeric"
+                  autoFocus
+                  placeholder={isDevTestPhone(phone) ? "0000" : "123456"}
+                  value={code}
+                  onChange={(e) => setCode(e.target.value)}
+                  className="h-12 text-base"
+                />
+                <button
+                  type="button"
+                  onClick={() => {
+                    setCodeSent(false);
+                    setCode("");
+                  }}
+                  className="w-fit text-xs text-muted-foreground underline underline-offset-4"
+                >
+                  Use a different number
+                </button>
+              </div>
+            )}
+
+            <div className="flex flex-col gap-2">
+              <Label htmlFor="staff-role">Role</Label>
+              <Select value={role} onValueChange={(v) => setRole((v as "ADMIN" | "STAFF") ?? "STAFF")}>
+                <SelectTrigger id="staff-role" className="h-12 text-base">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="STAFF">Staff</SelectItem>
+                  <SelectItem value="ADMIN">Admin</SelectItem>
+                </SelectContent>
+              </Select>
+              <p className="text-xs text-muted-foreground">
+                {role === "ADMIN" ? "Full access, same as you." : "Sees only their own calendar and bookings."}
+              </p>
+            </div>
+
+            <Button
+              type="submit"
+              disabled={isPending || (!codeSent && !phoneValid) || (codeSent && code.trim().length === 0)}
+              className="h-12 text-base"
+            >
+              {codeSent ? "Confirm and add to team" : "Send verification code"}
+            </Button>
+          </form>
         </CardContent>
       </Card>
 

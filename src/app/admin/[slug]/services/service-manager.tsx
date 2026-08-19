@@ -56,37 +56,45 @@ export function ServiceManager({ slug, services }: { slug: string; services: Ser
         <CardHeader>
           <CardTitle className="text-lg">Add a service</CardTitle>
         </CardHeader>
-        <CardContent className="flex flex-col gap-4">
-          <div className="flex flex-col gap-2">
-            <Label htmlFor="svc-name">Name</Label>
-            <Input id="svc-name" value={name} onChange={(e) => setName(e.target.value)} className="h-12 text-base" placeholder="Men's haircut" />
-          </div>
-          <div className="grid grid-cols-2 gap-4">
+        <CardContent>
+          <form
+            className="flex flex-col gap-4"
+            onSubmit={(e) => {
+              e.preventDefault();
+              if (!isPending && name.trim()) handleAdd();
+            }}
+          >
             <div className="flex flex-col gap-2">
-              <Label htmlFor="svc-duration">Duration (min)</Label>
-              <Input
-                id="svc-duration"
-                inputMode="numeric"
-                value={duration}
-                onChange={(e) => setDuration(e.target.value)}
-                className="h-12 text-base"
-              />
+              <Label htmlFor="svc-name">Name</Label>
+              <Input id="svc-name" value={name} onChange={(e) => setName(e.target.value)} className="h-12 text-base" placeholder="Men's haircut" />
             </div>
-            <div className="flex flex-col gap-2">
-              <Label htmlFor="svc-price">Price (AZN)</Label>
-              <Input
-                id="svc-price"
-                inputMode="decimal"
-                value={price}
-                onChange={(e) => setPrice(e.target.value)}
-                className="h-12 text-base"
-                placeholder="Discussed in store"
-              />
+            <div className="grid grid-cols-2 gap-4">
+              <div className="flex flex-col gap-2">
+                <Label htmlFor="svc-duration">Duration (min)</Label>
+                <Input
+                  id="svc-duration"
+                  inputMode="numeric"
+                  value={duration}
+                  onChange={(e) => setDuration(e.target.value)}
+                  className="h-12 text-base"
+                />
+              </div>
+              <div className="flex flex-col gap-2">
+                <Label htmlFor="svc-price">Price (AZN)</Label>
+                <Input
+                  id="svc-price"
+                  inputMode="decimal"
+                  value={price}
+                  onChange={(e) => setPrice(e.target.value)}
+                  className="h-12 text-base"
+                  placeholder="Discussed in store"
+                />
+              </div>
             </div>
-          </div>
-          <Button onClick={handleAdd} disabled={isPending || !name.trim()} className="h-12 text-base">
-            Add service
-          </Button>
+            <Button type="submit" disabled={isPending || !name.trim()} className="h-12 text-base">
+              Add service
+            </Button>
+          </form>
         </CardContent>
       </Card>
 

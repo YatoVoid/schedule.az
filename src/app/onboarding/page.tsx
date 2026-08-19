@@ -7,12 +7,15 @@ import { OnboardingForm } from "./onboarding-form";
 export default async function OnboardingPage() {
   const user = await requireUser();
 
-  const existing = await prisma.storeMember.findFirst({
-    where: { userId: user.id },
+  // Redirect away only if they already own a business — a staff-only
+  // member reaches the form below and can start their own, keeping the
+  // existing staff membership alongside the new one they'll own.
+  const existingAdmin = await prisma.storeMember.findFirst({
+    where: { userId: user.id, role: "ADMIN" },
     include: { store: true },
   });
-  if (existing) {
-    redirect(existing.role === "ADMIN" ? `/admin/${existing.store.slug}` : `/staff/${existing.store.slug}`);
+  if (existingAdmin) {
+    redirect(`/admin/${existingAdmin.store.slug}`);
   }
 
   return (

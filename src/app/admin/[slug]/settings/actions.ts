@@ -1,6 +1,6 @@
 "use server";
 
-import { mkdir, writeFile } from "fs/promises";
+import { mkdir, rm, writeFile } from "fs/promises";
 import path from "path";
 import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/prisma";
@@ -11,6 +11,11 @@ import type { ActionResult } from "@/app/login/actions";
 const LOGO_DIR = path.join(process.cwd(), "storage", "logos");
 const MAX_LOGO_BYTES = 5 * 1024 * 1024;
 const ALLOWED_LOGO_TYPES = new Set(["image/png", "image/jpeg", "image/webp"]);
+
+const STORE_IMAGE_DIR = path.join(process.cwd(), "storage", "store-images");
+const MAX_STORE_IMAGE_BYTES = 8 * 1024 * 1024;
+const MAX_STORE_IMAGES = 8;
+const ALLOWED_STORE_IMAGE_TYPES = new Set(["image/png", "image/jpeg", "image/webp"]);
 
 export async function updateStoreAction(
   slug: string,
@@ -62,5 +67,75 @@ export async function uploadStoreLogoAction(slug: string, formData: FormData): P
   });
 
   revalidatePath(`/admin/${slug}`, "layout");
+  return { ok: true };
+}
+
+export async function uploadStoreImageAction(slug: string, formData: FormData): Promise<ActionResult> {
+  const { membership } = await requireStoreAdmin(slug);
+
+  const file = formData.get("file");
+  if (!(file instanceof File)) return { ok: false, error: "No file received" };
+  if (!ALLOWED_STORE_IMAGE_TYPES.has(file.type)) return { ok: false, error: "Use a PNG, JPEG or WebP image" };
+  if (file.size > MAX_STORE_IMAGE_BYTES) return { ok: false, error: "Image must be under 8MB" };
+
+  const count = await prisma.storeImage.count({ where: { storeId: membership.storeId } });
+  if (count >= MAX_STORE_IMAGES) return { ok: false, error: `Up to ${MAX_STORE_IMAGES} photos per store` };
+
+  const image = await prisma.storeImage.create({
+    data: { storeId: membership.storeId, mimeType: file.type, position: count },
+  });
+
+  const dir = path.join(STORE_IMAGE_DIR, membership.storeId);
+  await mkdir(dir, { recursive: true });
+  const bytes = Buffer.from(await file.arrayBuffer());
+  await writeFile(path.join(dir, image.id), bytes);
+
+  revalidatePath(`/admin/${slug}`, "layout");
+  revalidatePath("/");
+  return { ok: true };
+}
+
+export async function deleteStoreImageAction(slug: string, imageId: string): Promise<ActionResult> {
+  const { membership } = await requireStoreAdmin(slug);
+
+  const image = await prisma.storeImage.findFirst({
+    where: { id: imageId, storeId: membership.storeId },
+  });
+  if (!image) return { ok: false, error: "Photo not found" };
+
+  await prisma.storeImage.delete({ where: { id: image.id } });
+  await rm(path.join(STORE_IMAGE_DIR, membership.storeId, image.id), { force: true });
+
+  // Close the gap so position stays a dense 0..n-1 sequence.
+  await prisma.storeImage.updateMany({
+    where: { storeId: membership.storeId, position: { gt: image.position } },
+    data: { position: { decrement: 1 } },
+  });
+
+  revalidatePath(`/admin/${slug}`, "layout");
+  revalidatePath("/");
+  return { ok: true };
+}
+
+export async function reorderStoreImagesAction(slug: string, orderedIds: string[]): Promise<ActionResult> {
+  const { membership } = await requireStoreAdmin(slug);
+
+  const images = await prisma.storeImage.findMany({
+    where: { storeId: membership.storeId },
+    select: { id: true },
+  });
+  const known = new Set(images.map((i) => i.id));
+  if (orderedIds.length !== images.length || !orderedIds.every((id) => known.has(id))) {
+    return { ok: false, error: "Photo list is out of date, refresh and try again" };
+  }
+
+  await prisma.$transaction(
+    orderedIds.map((id, position) =>
+      prisma.storeImage.update({ where: { id }, data: { position } }),
+    ),
+  );
+
+  revalidatePath(`/admin/${slug}`, "layout");
+  revalidatePath("/");
   return { ok: true };
 }

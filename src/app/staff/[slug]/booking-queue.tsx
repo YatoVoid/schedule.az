@@ -12,6 +12,7 @@ export type BookingRow = {
   id: string;
   serviceName: string;
   customerName: string;
+  customerContact: string | null;
   startAt: string;
   status: "PENDING_CONFIRMATION" | "CONFIRMED" | "DECLINED" | "CANCELLED" | "COMPLETED";
   rescheduledAt: string | null;
@@ -96,6 +97,7 @@ export function BookingQueue({ slug, bookings }: { slug: string; bookings: Booki
                   <p className="text-sm text-muted-foreground">
                     {b.customerName} · {dayLabel(b.startAt)} at {formatTime(b.startAt)}
                   </p>
+                  {b.customerContact && <p className="text-sm text-muted-foreground">{b.customerContact}</p>}
                 </div>
                 <div className="flex flex-col items-end gap-1">
                   <Badge variant="outline">Pending</Badge>
@@ -138,7 +140,10 @@ export function BookingQueue({ slug, bookings }: { slug: string; bookings: Booki
                       <p className="font-medium">
                         {formatTime(b.startAt)} · {b.serviceName}
                       </p>
-                      <p className="text-sm text-muted-foreground">{b.customerName}</p>
+                      <p className="text-sm text-muted-foreground">
+                        {b.customerName}
+                        {b.customerContact && ` · ${b.customerContact}`}
+                      </p>
                     </div>
                     <Badge>Confirmed</Badge>
                   </div>

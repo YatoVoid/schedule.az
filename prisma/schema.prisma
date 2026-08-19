@@ -59,8 +59,26 @@ model Store {
   services Service[]
   bookings Booking[]
   favorites Favorite[]
+  images   StoreImage[]
 
   @@index([category])
+}
+
+// Gallery photos shown cycling on the directory homepage card, distinct from
+// the single logoMimeType/logoUpdatedAt pair above. Bytes live on disk at
+// storage/store-images/{storeId}/{id} — see
+// src/app/api/store-images/[storeId]/[imageId]/route.ts. position is a plain
+// integer sort key the admin reorders by drag; ties broken by createdAt.
+model StoreImage {
+  id        String   @id @default(cuid())
+  storeId   String
+  mimeType  String
+  position  Int
+  createdAt DateTime @default(now())
+
+  store Store @relation(fields: [storeId], references: [id], onDelete: Cascade)
+
+  @@index([storeId, position])
 }
 
 // Join of a User to a Store with a role. Role is checked per-store, which is
