@@ -4,12 +4,20 @@ on:
   push:
     branches: [master]
 
+# actions/checkout would clone into the runner's own isolated _work folder,
+# a separate copy from /home/schedule.az that has no .env (not committed)
+# and none of the installed dependencies. Operating directly on the real
+# deployment directory instead keeps this a single source of truth.
 jobs:
   deploy:
     runs-on: self-hosted
     steps:
-      - uses: actions/checkout@v4
-      - run: npm ci
-      - run: npx prisma migrate deploy
-      - run: npm run build
-      - run: sudo pm2 restart schedule-az
+      - name: Deploy
+        run: |
+          cd /home/schedule.az
+          git fetch origin master
+          git reset --hard origin/master
+          npm ci
+          npx prisma migrate deploy
+          npm run build
+          sudo pm2 restart schedule-az
