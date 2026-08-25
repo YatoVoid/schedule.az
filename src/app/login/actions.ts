@@ -5,6 +5,7 @@ import { requestOtp, verifyOtp, OtpRateLimitError, type Identifier } from "@/lib
 import { normalizePhone, isDevTestPhone } from "@/lib/phone";
 import { phoneSchema, otpCodeSchema, emailSchema } from "@/lib/validation";
 import { getSession } from "@/lib/session";
+import { logSecurityEvent } from "@/lib/security-log";
 
 export type ActionResult = { ok: true } | { ok: false; error: string };
 export type LoginMethod = "phone" | "email";
@@ -106,6 +107,7 @@ export async function verifyOtpAction(
   const session = await getSession();
   session.userId = user.id;
   await session.save();
+  await logSecurityEvent("LOGIN_SUCCESS", { userId: user.id });
 
   return { ok: true, redirectTo: await resolvePostLoginRedirect(user.id, user.username, next) };
 }

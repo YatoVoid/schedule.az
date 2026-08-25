@@ -6,6 +6,7 @@ import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/prisma";
 import { requireUser } from "@/lib/auth";
 import { usernameSchema } from "@/lib/validation";
+import { matchesImageSignature } from "@/lib/image-sniff";
 import type { ActionResult } from "@/app/login/actions";
 
 const AVATAR_DIR = path.join(process.cwd(), "storage", "avatars");
@@ -44,8 +45,10 @@ export async function uploadAvatarAction(formData: FormData): Promise<ActionResu
   if (!ALLOWED_AVATAR_TYPES.has(file.type)) return { ok: false, error: "Use a PNG, JPEG or WebP image" };
   if (file.size > MAX_AVATAR_BYTES) return { ok: false, error: "Image must be under 5MB" };
 
-  await mkdir(AVATAR_DIR, { recursive: true });
   const bytes = Buffer.from(await file.arrayBuffer());
+  if (!matchesImageSignature(file.type, bytes)) return { ok: false, error: "That file isn't a valid image" };
+
+  await mkdir(AVATAR_DIR, { recursive: true });
   await writeFile(path.join(AVATAR_DIR, user.id), bytes);
 
   await prisma.user.update({

@@ -7,6 +7,7 @@ import { prisma } from "@/lib/prisma";
 import { requireStoreAdmin } from "@/lib/auth";
 import { storeOnboardingSchema, googleReviewUrlSchema } from "@/lib/validation";
 import { findDuplicateStoreName, DUPLICATE_NAME_WARNING } from "@/lib/duplicate-name";
+import { matchesImageSignature } from "@/lib/image-sniff";
 import type { ActionResult } from "@/app/login/actions";
 
 const LOGO_DIR = path.join(process.cwd(), "storage", "logos");
@@ -80,8 +81,10 @@ export async function uploadStoreLogoAction(slug: string, formData: FormData): P
   if (!ALLOWED_LOGO_TYPES.has(file.type)) return { ok: false, error: "Use a PNG, JPEG or WebP image" };
   if (file.size > MAX_LOGO_BYTES) return { ok: false, error: "Image must be under 5MB" };
 
-  await mkdir(LOGO_DIR, { recursive: true });
   const bytes = Buffer.from(await file.arrayBuffer());
+  if (!matchesImageSignature(file.type, bytes)) return { ok: false, error: "That file isn't a valid image" };
+
+  await mkdir(LOGO_DIR, { recursive: true });
   await writeFile(path.join(LOGO_DIR, membership.storeId), bytes);
 
   await prisma.store.update({
@@ -101,6 +104,9 @@ export async function uploadStoreImageAction(slug: string, formData: FormData): 
   if (!ALLOWED_STORE_IMAGE_TYPES.has(file.type)) return { ok: false, error: "Use a PNG, JPEG or WebP image" };
   if (file.size > MAX_STORE_IMAGE_BYTES) return { ok: false, error: "Image must be under 8MB" };
 
+  const bytes = Buffer.from(await file.arrayBuffer());
+  if (!matchesImageSignature(file.type, bytes)) return { ok: false, error: "That file isn't a valid image" };
+
   const count = await prisma.storeImage.count({ where: { storeId: membership.storeId } });
   if (count >= MAX_STORE_IMAGES) return { ok: false, error: `Up to ${MAX_STORE_IMAGES} photos per store` };
 
@@ -110,7 +116,6 @@ export async function uploadStoreImageAction(slug: string, formData: FormData): 
 
   const dir = path.join(STORE_IMAGE_DIR, membership.storeId);
   await mkdir(dir, { recursive: true });
-  const bytes = Buffer.from(await file.arrayBuffer());
   await writeFile(path.join(dir, image.id), bytes);
 
   revalidatePath(`/admin/${slug}`, "layout");

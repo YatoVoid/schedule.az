@@ -6,6 +6,7 @@ import { requireStoreAdmin } from "@/lib/auth";
 import { normalizePhone, isDevTestPhone } from "@/lib/phone";
 import { requestOtp, verifyOtp, OtpRateLimitError } from "@/lib/otp";
 import { staffInviteSchema, otpCodeSchema } from "@/lib/validation";
+import { logSecurityEvent } from "@/lib/security-log";
 import type { ActionResult } from "@/app/login/actions";
 
 function resolveStaffPhone(rawPhone: string): { phone: string } | { error: string } {
@@ -80,6 +81,7 @@ export async function confirmStaffInviteAction(
   await prisma.storeMember.create({
     data: { storeId: membership.storeId, userId, role },
   });
+  await logSecurityEvent("STAFF_ADDED", { userId: membership.userId, storeId: membership.storeId, detail: `added ${userId} as ${role}` });
 
   revalidatePath(`/admin/${slug}/staff`);
   return { ok: true };
@@ -96,6 +98,7 @@ export async function removeStaffAction(slug: string, memberId: string): Promise
     where: { id: memberId, storeId: membership.storeId },
   });
   if (result.count === 0) return { ok: false, error: "Team member not found" };
+  await logSecurityEvent("STAFF_REMOVED", { userId: membership.userId, storeId: membership.storeId, detail: `removed member ${memberId}` });
 
   revalidatePath(`/admin/${slug}/staff`);
   return { ok: true };

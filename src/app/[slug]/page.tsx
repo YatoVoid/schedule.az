@@ -147,7 +147,7 @@ export default async function StorePage({
     <main className="mx-auto flex w-full max-w-4xl flex-col gap-6 px-4 py-8">
       <script
         type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd).replace(/</g, "\\u003c") }}
       />
       <Link href="/" className="text-sm text-muted-foreground underline underline-offset-4">
         ← All businesses

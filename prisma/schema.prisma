@@ -182,11 +182,41 @@ model OtpCode {
   codeHash  String
   expiresAt DateTime
   consumedAt DateTime?
+  // Wrong-code guesses against this row. Locked out at MAX_VERIFY_ATTEMPTS
+  // (see src/lib/otp.ts) so a 6-digit code can't be brute-forced during its
+  // 10-minute validity window; the identifier-level 3-per-10min send limit
+  // still governs how many fresh codes/lockouts an attacker can churn through.
+  attempts  Int        @default(0)
   createdAt DateTime   @default(now())
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId, purpose])
+}
+
+enum SecurityEventType {
+  OTP_VERIFY_FAILED
+  OTP_LOCKED
+  LOGIN_SUCCESS
+  STAFF_ADDED
+  STAFF_REMOVED
+  PERMISSION_DENIED
+}
+
+// Queryable trail for the auth/admin events worth investigating after the
+// fact (credential-stuffing bursts, who added/removed a staff member).
+// Deliberately flat and denormalized (no FK to User/Store) so a row survives
+// even if the account or store it references gets deleted later.
+model SecurityEvent {
+  id        String            @id @default(cuid())
+  type      SecurityEventType
+  userId    String?
+  storeId   String?
+  detail    String?
+  createdAt DateTime          @default(now())
+
+  @@index([type, createdAt])
+  @@index([userId])
 }
 
 enum BookingStatus {

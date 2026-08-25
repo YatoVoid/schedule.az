@@ -2,10 +2,14 @@ import crypto from "crypto";
 import { prisma } from "@/lib/prisma";
 import { smsProvider } from "@/lib/sms";
 import { emailProvider } from "@/lib/email";
+import { logSecurityEvent } from "@/lib/security-log";
 
 const OTP_TTL_MINUTES = 10;
 const OTP_WINDOW_MINUTES = 10;
 const OTP_MAX_PER_WINDOW = 3;
+// Caps guesses against a single issued code, independent of codeHash, so an
+// attacker can't brute-force the 6-digit space during the 10-minute TTL.
+const OTP_MAX_VERIFY_ATTEMPTS = 5;
 
 export type Identifier = { type: "phone"; value: string } | { type: "email"; value: string };
 
@@ -87,17 +91,29 @@ export async function verifyOtp(identifier: Identifier, code: string) {
       : await prisma.user.findUnique({ where: { email: identifier.value } });
   if (!user) return null;
 
+  // Looked up by recency, not by codeHash, so a wrong guess still lands on
+  // the row whose attempts counter needs incrementing/locking.
   const candidate = await prisma.otpCode.findFirst({
     where: {
       userId: user.id,
       purpose: "LOGIN",
-      codeHash: hashCode(code),
       consumedAt: null,
       expiresAt: { gte: new Date() },
     },
     orderBy: { createdAt: "desc" },
   });
   if (!candidate) return null;
+
+  if (candidate.attempts >= OTP_MAX_VERIFY_ATTEMPTS) {
+    await logSecurityEvent("OTP_LOCKED", { userId: user.id });
+    return null;
+  }
+
+  if (candidate.codeHash !== hashCode(code)) {
+    await prisma.otpCode.update({ where: { id: candidate.id }, data: { attempts: { increment: 1 } } });
+    await logSecurityEvent("OTP_VERIFY_FAILED", { userId: user.id });
+    return null;
+  }
 
   await prisma.otpCode.update({
     where: { id: candidate.id },

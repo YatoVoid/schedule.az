@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 import { Suspense } from "react";
 import { Geist_Mono, Golos_Text, Unbounded } from "next/font/google";
 import { Toaster } from "@/components/ui/sonner";
@@ -80,6 +81,10 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
           raster carrying its provenance.
         */}
         {children}
+        <footer className="mt-auto flex justify-center gap-4 border-t px-4 py-4 text-xs text-muted-foreground">
+          <Link href="/privacy" className="underline-offset-4 hover:underline">Privacy</Link>
+          <Link href="/terms" className="underline-offset-4 hover:underline">Terms</Link>
+        </footer>
         <Suspense fallback={null}>
           <MobileTabBar />
         </Suspense>
