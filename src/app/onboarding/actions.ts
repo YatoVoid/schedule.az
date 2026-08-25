@@ -1,20 +1,21 @@
 "use server";
 
-import { redirect } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import { requireUser } from "@/lib/auth";
 import { generateUniqueStoreSlug } from "@/lib/slug";
 import { storeOnboardingSchema } from "@/lib/validation";
+import { findDuplicateStoreName, DUPLICATE_NAME_WARNING } from "@/lib/duplicate-name";
 import type { ActionResult } from "@/app/login/actions";
 
 export async function createStoreAction(input: {
   name: string;
   category: string;
   address: string;
+  phone: string;
   description: string;
   latitude: number | null;
   longitude: number | null;
-}): Promise<ActionResult & { redirectTo?: string }> {
+}): Promise<ActionResult & { redirectTo?: string; warning?: string }> {
   const user = await requireUser();
 
   const parsed = storeOnboardingSchema.safeParse(input);
@@ -22,14 +23,18 @@ export async function createStoreAction(input: {
     return { ok: false, error: parsed.error.issues[0].message };
   }
 
-  // Only blocks someone who already owns a business — staff-only members
-  // (and plain consumers) are allowed through, so a person who works
-  // somewhere can still start their own; they end up an ADMIN of the new
-  // store and keep their existing STAFF membership elsewhere.
-  const existingAdmin = await prisma.storeMember.findFirst({ where: { userId: user.id, role: "ADMIN" } });
-  if (existingAdmin) redirect("/onboarding");
-
+  // One account can own more than one business — no check against existing
+  // ADMIN memberships here. They end up ADMIN of this new store too,
+  // keeping every existing membership (as ADMIN or STAFF) elsewhere intact.
   const slug = await generateUniqueStoreSlug(parsed.data.name);
+
+  // Doesn't block creation — flags it only when neither fallback is set,
+  // since an address or phone number already tells two same-named
+  // businesses apart.
+  const warning =
+    !parsed.data.address && !parsed.data.phone && (await findDuplicateStoreName(parsed.data.name))
+      ? DUPLICATE_NAME_WARNING
+      : undefined;
 
   const store = await prisma.store.create({
     data: {
@@ -37,6 +42,7 @@ export async function createStoreAction(input: {
       name: parsed.data.name,
       category: parsed.data.category,
       address: parsed.data.address || null,
+      phone: parsed.data.phone || null,
       description: parsed.data.description || null,
       latitude: parsed.data.latitude ?? null,
       longitude: parsed.data.longitude ?? null,
@@ -46,5 +52,5 @@ export async function createStoreAction(input: {
     },
   });
 
-  return { ok: true, redirectTo: `/admin/${store.slug}` };
+  return { ok: true, redirectTo: `/admin/${store.slug}`, warning };
 }

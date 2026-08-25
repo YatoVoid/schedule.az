@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/prisma";
 import { requireUser, getCurrentUser } from "@/lib/auth";
 import { getSlotsForMemberService, getAvailableDaysInRange } from "@/lib/booking-slots";
+import { reviewSchema } from "@/lib/validation";
 import type { ActionResult } from "@/app/login/actions";
 
 export async function getAvailableDatesAction(
@@ -56,7 +57,7 @@ export async function createBookingAction(
   serviceId: string,
   dateIso: string,
   startMinute: number,
-): Promise<ActionResult & { bookingId?: string }> {
+): Promise<ActionResult & { bookingId?: string; startAt?: string; endAt?: string }> {
   const user = await requireUser();
 
   const store = await prisma.store.findUnique({ where: { slug: storeSlug } });
@@ -93,7 +94,7 @@ export async function createBookingAction(
   });
 
   revalidatePath(`/staff/${storeSlug}`);
-  return { ok: true, bookingId: booking.id };
+  return { ok: true, bookingId: booking.id, startAt: startAt.toISOString(), endAt: endAt.toISOString() };
 }
 
 export async function toggleFavoriteAction(storeId: string): Promise<ActionResult & { favorited?: boolean }> {
@@ -110,4 +111,57 @@ export async function toggleFavoriteAction(storeId: string): Promise<ActionResul
 
   await prisma.favorite.create({ data: { userId: user.id, storeId } });
   return { ok: true, favorited: true };
+}
+
+// Only someone who's actually had a completed appointment here can leave a
+// rating — keeps this a record of real experience, not open to anyone who
+// just found the page.
+export async function canReviewAction(storeSlug: string): Promise<boolean> {
+  const user = await getCurrentUser();
+  if (!user) return false;
+
+  const store = await prisma.store.findUnique({ where: { slug: storeSlug }, select: { id: true } });
+  if (!store) return false;
+
+  const completedBooking = await prisma.booking.findFirst({
+    where: { userId: user.id, storeId: store.id, status: "COMPLETED" },
+    select: { id: true },
+  });
+  return !!completedBooking;
+}
+
+// Every rating gets identical treatment regardless of the number chosen —
+// no routing by sentiment (that's "review gating," which Google's review
+// policies prohibit). The rating and message are always saved the same
+// way, visible to the store's admins; whether to also post on Google is a
+// separate, always-available choice offered to every reviewer equally
+// (see googleReviewUrl in the return value), never automatic.
+export async function submitReviewAction(
+  storeSlug: string,
+  input: { rating: number; message: string },
+): Promise<ActionResult & { googleReviewUrl?: string | null }> {
+  const user = await requireUser();
+
+  const parsed = reviewSchema.safeParse(input);
+  if (!parsed.success) return { ok: false, error: parsed.error.issues[0].message };
+
+  const store = await prisma.store.findUnique({ where: { slug: storeSlug } });
+  if (!store) return { ok: false, error: "Business not found" };
+
+  const completedBooking = await prisma.booking.findFirst({
+    where: { userId: user.id, storeId: store.id, status: "COMPLETED" },
+    select: { id: true },
+  });
+  if (!completedBooking) return { ok: false, error: "Only past customers can leave a rating here" };
+
+  const message = (parsed.data.message ?? "").trim() || null;
+  await prisma.review.upsert({
+    where: { userId_storeId: { userId: user.id, storeId: store.id } },
+    update: { rating: parsed.data.rating, message },
+    create: { userId: user.id, storeId: store.id, rating: parsed.data.rating, message },
+  });
+
+  revalidatePath(`/${storeSlug}`);
+  revalidatePath(`/admin/${storeSlug}/reviews`);
+  return { ok: true, googleReviewUrl: store.googleReviewUrl };
 }

@@ -30,24 +30,36 @@ export function DashboardNav({
   return (
     <header className="sticky top-0 z-40 border-b bg-background/95 backdrop-blur">
       <div className="mx-auto flex max-w-3xl flex-col gap-3 px-4 py-3">
-        <div className="flex items-center justify-between gap-2">
+        {/* flex-wrap: with a dashboard link, an "add/start a business" link,
+            and a business switcher all competing for one row, a staff
+            member who also owns another business doesn't fit them on one
+            line below ~430px — wrapping to a second line beats overflowing
+            past the viewport or squeezing text unreadably thin. */}
+        <div className="flex flex-wrap items-center justify-between gap-x-2 gap-y-1">
           <Link
             href="/"
             className="text-sm text-muted-foreground underline-offset-4 hover:text-foreground hover:underline"
           >
-            ← Browse Schedule.az
+            <span className="sm:hidden">← Schedule.az</span>
+            <span className="hidden sm:inline">← Browse Schedule.az</span>
           </Link>
           <div className="flex items-center gap-2">
-            {!ownsABusiness && (
-              <Link
-                href="/onboarding"
-                className="text-sm text-muted-foreground underline-offset-4 hover:text-foreground hover:underline"
-              >
-                Start your own business
-              </Link>
-            )}
+            <Link
+              href="/onboarding"
+              className="text-sm text-muted-foreground underline-offset-4 hover:text-foreground hover:underline"
+            >
+              <span className="sm:hidden">{ownsABusiness ? "Add business" : "Start a business"}</span>
+              <span className="hidden sm:inline">
+                {ownsABusiness ? "Add another business" : "Start your own business"}
+              </span>
+            </Link>
             {memberships.length > 1 && (
-              <BusinessSwitcher memberships={memberships} excludeSlug={storeSlug} label="Switch business" />
+              <BusinessSwitcher
+                memberships={memberships}
+                excludeSlug={storeSlug}
+                label="Switch business"
+                shortLabel="Switch"
+              />
             )}
           </div>
         </div>
@@ -58,7 +70,7 @@ export function DashboardNav({
               <AvatarFallback className="text-xs">{storeName.slice(0, 2).toUpperCase()}</AvatarFallback>
             </Avatar>
             <div className="min-w-0">
-              <p className="truncate font-semibold leading-tight">{storeName}</p>
+              <p className="truncate font-heading font-medium leading-tight">{storeName}</p>
               <p className="text-xs text-muted-foreground">{roleLabel}</p>
             </div>
           </div>
@@ -68,7 +80,17 @@ export function DashboardNav({
             </Button>
           </form>
         </div>
-        <nav className="-mx-4 flex gap-1 overflow-x-auto px-4">
+        {/* On narrow screens this row can overflow (6 tabs no longer fit at
+            ~390px since Reviews was added) — the mask-image edge fade is the
+            only cue that it scrolls, since there's no visible scrollbar on
+            most mobile browsers and no room for a persistent arrow icon. */}
+        <nav
+          className="-mx-4 flex gap-1 overflow-x-auto px-4"
+          style={{
+            maskImage: "linear-gradient(to right, black calc(100% - 24px), transparent)",
+            WebkitMaskImage: "linear-gradient(to right, black calc(100% - 24px), transparent)",
+          }}
+        >
           {links.map((link) => {
             const active = pathname === link.href;
             return (

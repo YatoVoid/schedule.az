@@ -8,6 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Calendar } from "@/components/ui/calendar";
+import { AddToCalendar } from "@/components/add-to-calendar";
 import { dateToIso, isoToDate, formatMinutes } from "@/lib/schedule";
 import { sendOtpAction, verifyOtpAction, type LoginMethod } from "@/app/login/actions";
 import {
@@ -28,11 +29,15 @@ type Step = "professional" | "service" | "datetime" | "contact" | "done";
 
 export function BookingFlow({
   storeSlug,
+  storeName,
+  storeAddress,
   professionals,
   services,
   initialUser,
 }: {
   storeSlug: string;
+  storeName: string;
+  storeAddress: string | null;
   professionals: Professional[];
   services: Service[];
   initialUser: CurrentUser | null;
@@ -45,6 +50,9 @@ export function BookingFlow({
   const [datesResult, setDatesResult] = useState<{ key: string; dates: Set<string> } | null>(null);
   const [startMinute, setStartMinute] = useState<number | null>(null);
   const [user, setUser] = useState<CurrentUser | null>(initialUser);
+  const [confirmedBooking, setConfirmedBooking] = useState<{ id: string; startAt: string; endAt: string } | null>(
+    null,
+  );
   const [isPending, startTransition] = useTransition();
   const dateRef = useRef(date);
   useEffect(() => {
@@ -104,6 +112,9 @@ export function BookingFlow({
         toast.error(result.error);
         return;
       }
+      if (result.bookingId && result.startAt && result.endAt) {
+        setConfirmedBooking({ id: result.bookingId, startAt: result.startAt, endAt: result.endAt });
+      }
       setStep("done");
     });
   }
@@ -125,6 +136,18 @@ export function BookingFlow({
           {date.toLocaleDateString(undefined, { month: "long", day: "numeric" })} at{" "}
           {startMinute !== null && formatMinutes(startMinute)}.
         </p>
+        {confirmedBooking && (
+          <div className="mt-1 w-full">
+            <AddToCalendar
+              bookingId={confirmedBooking.id}
+              title={`${selectedService?.name ?? "Appointment"} at ${storeName}`}
+              description={`Booked via Schedule.az with ${selectedProfessional?.name ?? "staff"}`}
+              location={storeAddress}
+              startAt={confirmedBooking.startAt}
+              endAt={confirmedBooking.endAt}
+            />
+          </div>
+        )}
         <Button render={<Link href="/account" />} nativeButton={false} className="mt-2 h-11">
           View my bookings
         </Button>

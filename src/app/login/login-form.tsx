@@ -2,6 +2,7 @@
 
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
+import { PhoneIcon, MailIcon, KeyRoundIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -62,28 +63,34 @@ export function LoginForm({ next }: { next?: string }) {
         {method === "phone" ? (
           <div className="flex flex-col gap-2">
             <Label htmlFor="phone">Phone number</Label>
-            <Input
-              id="phone"
-              inputMode="tel"
-              autoComplete="tel"
-              placeholder="050 123 45 67"
-              value={identifier}
-              onChange={(e) => setIdentifier(e.target.value)}
-              className="h-12 text-base"
-            />
+            <div className="relative">
+              <PhoneIcon className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground" />
+              <Input
+                id="phone"
+                inputMode="tel"
+                autoComplete="tel"
+                placeholder="050 123 45 67"
+                value={identifier}
+                onChange={(e) => setIdentifier(e.target.value)}
+                className="h-12 pl-10 text-base"
+              />
+            </div>
           </div>
         ) : (
           <div className="flex flex-col gap-2">
             <Label htmlFor="email">Email address</Label>
-            <Input
-              id="email"
-              type="email"
-              autoComplete="email"
-              placeholder="you@example.com"
-              value={identifier}
-              onChange={(e) => setIdentifier(e.target.value)}
-              className="h-12 text-base"
-            />
+            <div className="relative">
+              <MailIcon className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground" />
+              <Input
+                id="email"
+                type="email"
+                autoComplete="email"
+                placeholder="you@example.com"
+                value={identifier}
+                onChange={(e) => setIdentifier(e.target.value)}
+                className="h-12 pl-10 text-base"
+              />
+            </div>
           </div>
         )}
 
@@ -116,17 +123,20 @@ export function LoginForm({ next }: { next?: string }) {
     >
       <div className="flex flex-col gap-2">
         <Label htmlFor="code">Enter the 6-digit code</Label>
-        <Input
-          id="code"
-          inputMode="numeric"
-          autoComplete="one-time-code"
-          maxLength={6}
-          placeholder={isDevBypass ? "0000" : "123456"}
-          value={code}
-          onChange={(e) => setCode(e.target.value.replace(/\D/g, ""))}
-          className="h-12 text-base tracking-[0.3em]"
-          autoFocus
-        />
+        <div className="relative">
+          <KeyRoundIcon className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground" />
+          <Input
+            id="code"
+            inputMode="numeric"
+            autoComplete="one-time-code"
+            maxLength={6}
+            placeholder={isDevBypass ? "0000" : "123456"}
+            value={code}
+            onChange={(e) => setCode(e.target.value.replace(/\D/g, ""))}
+            className="h-12 pl-10 text-base tracking-[0.3em]"
+            autoFocus
+          />
+        </div>
         <p className="text-sm text-muted-foreground">
           Sent to {identifier}
           {method === "email" ? ", check your inbox (and spam folder)" : ""}

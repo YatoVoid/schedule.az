@@ -13,11 +13,13 @@ export function BusinessSwitcher({
   memberships,
   excludeSlug,
   label,
+  shortLabel,
   className,
 }: {
   memberships: UserMembership[];
   excludeSlug?: string;
   label: string;
+  shortLabel?: string;
   className?: string;
 }) {
   const options = excludeSlug ? memberships.filter((m) => m.storeSlug !== excludeSlug) : memberships;
@@ -26,7 +28,14 @@ export function BusinessSwitcher({
   return (
     <details className={`group relative ${className ?? ""}`}>
       <summary className="flex list-none cursor-pointer items-center gap-1 rounded-md border px-2.5 py-1.5 text-sm font-medium text-foreground marker:content-none hover:bg-muted [&::-webkit-details-marker]:hidden">
-        {label}
+        {shortLabel ? (
+          <>
+            <span className="sm:hidden">{shortLabel}</span>
+            <span className="hidden sm:inline">{label}</span>
+          </>
+        ) : (
+          label
+        )}
         <span aria-hidden className="text-xs text-muted-foreground">
           ▾
         </span>

@@ -1,12 +1,17 @@
 import Link from "next/link";
 import { prisma } from "@/lib/prisma";
 import { requireUser, getUserMemberships } from "@/lib/auth";
+import { userAvatarUrl } from "@/lib/avatar";
 import { SiteHeader } from "@/components/site-header";
-import { ProfileName } from "./profile-name";
 import { AccountTabs } from "./account-tabs";
 import type { AccountBooking } from "./booking-row";
 
-export default async function AccountPage() {
+export default async function AccountPage({
+  searchParams,
+}: PageProps<"/account">) {
+  const { tab } = await searchParams;
+  const initialTab = tab === "favorites" || tab === "past" || tab === "profile" ? tab : "upcoming";
+
   const user = await requireUser("/account");
   const memberships = await getUserMemberships(user.id);
 
@@ -34,9 +39,11 @@ export default async function AccountPage() {
       id: b.id,
       storeName: b.store.name,
       storeSlug: b.store.slug,
+      storeAddress: b.store.address,
       serviceName: b.service.name,
       staffName: b.storeMember.user.name ?? b.storeMember.user.phone ?? "Staff",
       startAt: b.startAt.toISOString(),
+      endAt: b.endAt.toISOString(),
       status: b.status,
       note: b.note,
       unseen: b.clientSeenStatusAt === null && (b.status === "CONFIRMED" || b.status === "DECLINED"),
@@ -51,11 +58,11 @@ export default async function AccountPage() {
           <Link href="/" className="text-sm text-muted-foreground underline underline-offset-4">
             ← All businesses
           </Link>
-          <h1 className="mt-2 text-2xl font-semibold tracking-tight">My account</h1>
-          <ProfileName initialName={user.name} identifier={user.phone ?? user.email ?? ""} />
+          <h1 className="mt-2 font-heading text-2xl font-medium tracking-tight">My account</h1>
         </div>
 
         <AccountTabs
+          initialTab={initialTab}
           upcoming={upcoming.map(toRow)}
           past={past.map(toRow)}
           favorites={favorites.map((f) => ({
@@ -65,6 +72,14 @@ export default async function AccountPage() {
             category: f.store.category,
             logoUpdatedAt: f.store.logoUpdatedAt ? f.store.logoUpdatedAt.toISOString() : null,
           }))}
+          profile={{
+            identifier: user.phone ?? user.email ?? "",
+            name: user.name,
+            username: user.username,
+            avatarUrl: userAvatarUrl(user.id, user.avatarUpdatedAt),
+            fallbackInitial: (user.phone ?? user.email ?? "?").slice(0, 1).toUpperCase(),
+            memberships,
+          }}
         />
       </main>
     </div>

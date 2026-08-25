@@ -2,6 +2,8 @@
 
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
+import { toast } from "sonner";
+import { PhoneIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -19,6 +21,7 @@ export function OnboardingForm() {
     latitude: null,
     longitude: null,
   });
+  const [phone, setPhone] = useState("");
   const [description, setDescription] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
@@ -30,6 +33,7 @@ export function OnboardingForm() {
         name,
         category,
         address: addressValue.address,
+        phone,
         description,
         latitude: addressValue.latitude,
         longitude: addressValue.longitude,
@@ -38,6 +42,7 @@ export function OnboardingForm() {
         setError(result.error);
         return;
       }
+      if (result.warning) toast.warning(result.warning);
       router.push(result.redirectTo ?? "/");
     });
   }
@@ -67,6 +72,24 @@ export function OnboardingForm() {
       </div>
 
       <AddressMapPicker value={addressValue} onChange={setAddressValue} />
+
+      <div className="flex flex-col gap-2">
+        <Label htmlFor="phone">Business phone (optional)</Label>
+        <div className="relative">
+          <PhoneIcon className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground" />
+          <Input
+            id="phone"
+            inputMode="tel"
+            placeholder="012 345 67 89"
+            value={phone}
+            onChange={(e) => setPhone(e.target.value)}
+            className="h-12 pl-10 text-base"
+          />
+        </div>
+        <p className="text-xs text-muted-foreground">
+          Shown to customers, and helps tell your business apart if another one shares its name.
+        </p>
+      </div>
 
       <div className="flex flex-col gap-2">
         <Label htmlFor="description">Short description (optional)</Label>

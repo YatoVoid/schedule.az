@@ -24,11 +24,19 @@ model User {
   email     String?  @unique
   name      String?
   createdAt DateTime @default(now())
+  // Null until the Instagram-style profile-setup step runs, which every
+  // login redirects a user through until it's set (see redirectForUser in
+  // src/app/login/actions.ts). Stored lowercase; avatar bytes live on disk
+  // (storage/avatars/{id}), same pattern as Store.logoMimeType.
+  username        String?   @unique
+  avatarMimeType  String?
+  avatarUpdatedAt DateTime?
 
   memberships StoreMember[]
   bookings    Booking[]
   favorites   Favorite[]
   otpCodes    OtpCode[]
+  reviews     Review[]
 }
 
 enum StoreMemberRole {
@@ -52,6 +60,10 @@ model Store {
   latitude    Float?
   longitude   Float?
   phone       String?
+  // Where a customer who leaves a 4-5 star in-app rating gets sent to post
+  // it publicly (e.g. a "g.page/r/.../review" link) — see Review below.
+  // Null means the review flow just thanks them without a redirect.
+  googleReviewUrl String?
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
@@ -60,6 +72,7 @@ model Store {
   bookings Booking[]
   favorites Favorite[]
   images   StoreImage[]
+  reviews  Review[]
 
   @@index([category])
 }
@@ -231,4 +244,31 @@ model Favorite {
   store Store @relation(fields: [storeId], references: [id], onDelete: Cascade)
 
   @@unique([userId, storeId])
+}
+
+// A star rating every reviewer leaves in-app first, before anything goes
+// anywhere else (see src/lib/reviews.ts for the routing rule). A rating of
+// 4-5 gets forwarded to the store's googleReviewUrl for a public review —
+// message stays null, since the actual written review lives on Google
+// instead. A rating of 1-3 keeps `message` here, visible only to that
+// store's admins (src/app/admin/[slug]/reviews), never surfaced publicly,
+// so a bad experience reaches the owner without ever touching the public
+// rating surface on Google. The numeric rating itself is still counted in
+// this store's own average/count everywhere in this app (directory sort,
+// filter, store detail) regardless of which path it took — only the public
+// Google side is gated, not our own displayed rating.
+model Review {
+  id        String   @id @default(cuid())
+  storeId   String
+  userId    String
+  rating    Int
+  message   String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  store Store @relation(fields: [storeId], references: [id], onDelete: Cascade)
+  user  User  @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, storeId])
+  @@index([storeId])
 }

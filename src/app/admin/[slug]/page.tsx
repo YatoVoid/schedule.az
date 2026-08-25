@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { StarIcon } from "lucide-react";
 import { prisma } from "@/lib/prisma";
 import { requireStoreAdmin } from "@/lib/auth";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -27,6 +28,7 @@ export default async function AdminOverviewPage({
     upcomingBookingCount,
     monthlyCompleted,
     allTimeKeptBookings,
+    ratingAgg,
   ] = await Promise.all([
     prisma.service.count({ where: { storeId, active: true } }),
     prisma.storeMember.count({ where: { storeId, role: "STAFF" } }),
@@ -44,6 +46,7 @@ export default async function AdminOverviewPage({
       where: { storeId, status: { in: [...KEPT_STATUSES] } },
       select: { userId: true, user: { select: { name: true, phone: true, email: true } } },
     }),
+    prisma.review.aggregate({ where: { storeId }, _avg: { rating: true }, _count: { rating: true } }),
   ]);
 
   const revenueThisMonth = monthlyCompleted.reduce((sum, b) => sum + (b.priceAzn?.toNumber() ?? 0), 0);
@@ -89,10 +92,26 @@ export default async function AdminOverviewPage({
         <p className="text-xs text-muted-foreground">Share this on Instagram or wherever your customers find you.</p>
       </div>
 
-      <div className="grid grid-cols-3 gap-3">
+      <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
         <StatCard label="Active services" value={serviceCount} href={`/admin/${slug}/services`} />
         <StatCard label="Team" value={allMembers.length} href={`/admin/${slug}/staff`} />
         <StatCard label="Upcoming bookings" value={upcomingBookingCount} href={`/admin/${slug}/bookings`} />
+        <Link
+          href={`/admin/${slug}/reviews`}
+          className="rounded-xl border bg-card p-4 transition-colors hover:bg-accent"
+        >
+          {ratingAgg._count.rating > 0 ? (
+            <div className="flex items-center gap-1">
+              <StarIcon className="size-4 text-primary" fill="currentColor" />
+              <p className="text-2xl font-medium font-mono tabular-nums">{ratingAgg._avg.rating!.toFixed(1)}</p>
+            </div>
+          ) : (
+            <p className="text-2xl font-medium font-mono tabular-nums">—</p>
+          )}
+          <p className="text-xs text-muted-foreground">
+            {ratingAgg._count.rating > 0 ? `${ratingAgg._count.rating} rating${ratingAgg._count.rating === 1 ? "" : "s"}` : "Rating"}
+          </p>
+        </Link>
       </div>
 
       {!setupDone && (
@@ -119,11 +138,11 @@ export default async function AdminOverviewPage({
         <CardContent className="flex flex-col gap-5">
           <div className="grid grid-cols-2 gap-3">
             <div className="rounded-xl border bg-card p-4">
-              <p className="text-2xl font-semibold tabular-nums">{monthlyCompleted.length}</p>
+              <p className="text-2xl font-medium font-mono tabular-nums">{monthlyCompleted.length}</p>
               <p className="text-xs text-muted-foreground">Completed bookings</p>
             </div>
             <div className="rounded-xl border bg-card p-4">
-              <p className="text-2xl font-semibold tabular-nums">{revenueThisMonth.toFixed(0)} AZN</p>
+              <p className="text-2xl font-medium font-mono tabular-nums">{revenueThisMonth.toFixed(0)} AZN</p>
               <p className="text-xs text-muted-foreground">Revenue charged</p>
             </div>
           </div>
@@ -139,10 +158,7 @@ export default async function AdminOverviewPage({
                     key={s.name + i}
                     className="flex items-center justify-between gap-3 rounded-lg border bg-card px-3 py-2 text-sm"
                   >
-                    <span className="min-w-0 truncate font-medium">
-                      {i === 0 && s.count > 0 ? "🏆 " : ""}
-                      {s.name}
-                    </span>
+                    <span className="min-w-0 truncate font-medium">{s.name}</span>
                     <span className="shrink-0 text-muted-foreground">
                       {s.count} booking{s.count === 1 ? "" : "s"} · {s.revenue.toFixed(0)} AZN
                     </span>
@@ -183,12 +199,6 @@ export default async function AdminOverviewPage({
               </>
             )}
           </div>
-
-          <p className="text-xs text-muted-foreground">
-            Visitor/traffic analytics aren&apos;t tracked yet, that needs a separate analytics integration
-            (e.g. Plausible or PostHog) that isn&apos;t wired up. Everything above is computed from real bookings,
-            nothing here is estimated.
-          </p>
         </CardContent>
       </Card>
     </div>
@@ -198,7 +208,7 @@ export default async function AdminOverviewPage({
 function StatCard({ label, value, href }: { label: string; value: number; href: string }) {
   return (
     <Link href={href} className="rounded-xl border bg-card p-4 transition-colors hover:bg-accent">
-      <p className="text-2xl font-semibold tabular-nums">{value}</p>
+      <p className="text-2xl font-medium font-mono tabular-nums">{value}</p>
       <p className="text-xs text-muted-foreground">{label}</p>
     </Link>
   );

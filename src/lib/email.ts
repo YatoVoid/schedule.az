@@ -1,5 +1,7 @@
-// Mirrors src/lib/sms.ts, abstracted so a real transactional email provider
-// (Resend, SES, etc.) can be dropped in without touching call sites.
+import { Resend } from "resend";
+
+// Abstracted so a real transactional provider can be dropped in without
+// touching call sites (mirrors src/lib/sms.ts).
 export interface EmailProvider {
   send(toEmail: string, subject: string, body: string): Promise<void>;
 }
@@ -10,4 +12,32 @@ class ConsoleEmailProvider implements EmailProvider {
   }
 }
 
-export const emailProvider: EmailProvider = new ConsoleEmailProvider();
+// Real send via Resend (resend.com). Needs RESEND_API_KEY and a sender
+// address on a domain verified in the Resend dashboard (RESEND_FROM_EMAIL,
+// e.g. "Schedule.az <noreply@schedule.az>") — until that domain is
+// verified, Resend only delivers to the account owner's own inbox, so
+// nothing user-facing works until DNS records are added there.
+class ResendEmailProvider implements EmailProvider {
+  private client: Resend;
+  private from: string;
+
+  constructor(apiKey: string, from: string) {
+    this.client = new Resend(apiKey);
+    this.from = from;
+  }
+
+  async send(toEmail: string, subject: string, body: string): Promise<void> {
+    const { error } = await this.client.emails.send({
+      from: this.from,
+      to: toEmail,
+      subject,
+      text: body,
+    });
+    if (error) throw new Error(`Resend send failed: ${error.message}`);
+  }
+}
+
+export const emailProvider: EmailProvider =
+  process.env.RESEND_API_KEY && process.env.RESEND_FROM_EMAIL
+    ? new ResendEmailProvider(process.env.RESEND_API_KEY, process.env.RESEND_FROM_EMAIL)
+    : new ConsoleEmailProvider();

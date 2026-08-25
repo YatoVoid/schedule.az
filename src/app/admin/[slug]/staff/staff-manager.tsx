@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useState, useTransition } from "react";
+import { PhoneIcon, KeyRoundIcon } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -46,7 +47,7 @@ export function StaffManager({
       setCodeSent(true);
       toast.success(
         isDevTestPhone(phone)
-          ? "Dev phone — enter code 0000"
+          ? "Dev phone, enter code 0000"
           : "Code sent. Have them read it back to you.",
       );
     });
@@ -93,15 +94,18 @@ export function StaffManager({
           >
             <div className="flex flex-col gap-2">
               <Label htmlFor="staff-phone">Phone number</Label>
-              <Input
-                id="staff-phone"
-                inputMode="tel"
-                placeholder="050 123 45 67"
-                value={phone}
-                disabled={codeSent}
-                onChange={(e) => setPhone(e.target.value)}
-                className="h-12 text-base"
-              />
+              <div className="relative">
+                <PhoneIcon className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground" />
+                <Input
+                  id="staff-phone"
+                  inputMode="tel"
+                  placeholder="050 123 45 67"
+                  value={phone}
+                  disabled={codeSent}
+                  onChange={(e) => setPhone(e.target.value)}
+                  className="h-12 pl-10 text-base"
+                />
+              </div>
               <p className="text-xs text-muted-foreground">
                 {codeSent
                   ? "A code was sent to this number. Have them read it back to you below."
@@ -112,15 +116,18 @@ export function StaffManager({
             {codeSent && (
               <div className="flex flex-col gap-2">
                 <Label htmlFor="staff-code">Verification code</Label>
-                <Input
-                  id="staff-code"
-                  inputMode="numeric"
-                  autoFocus
-                  placeholder={isDevTestPhone(phone) ? "0000" : "123456"}
-                  value={code}
-                  onChange={(e) => setCode(e.target.value)}
-                  className="h-12 text-base"
-                />
+                <div className="relative">
+                  <KeyRoundIcon className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground" />
+                  <Input
+                    id="staff-code"
+                    inputMode="numeric"
+                    autoFocus
+                    placeholder={isDevTestPhone(phone) ? "0000" : "123456"}
+                    value={code}
+                    onChange={(e) => setCode(e.target.value)}
+                    className="h-12 pl-10 text-base"
+                  />
+                </div>
                 <button
                   type="button"
                   onClick={() => {

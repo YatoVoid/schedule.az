@@ -5,7 +5,8 @@ import path from "path";
 import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/prisma";
 import { requireStoreAdmin } from "@/lib/auth";
-import { storeOnboardingSchema } from "@/lib/validation";
+import { storeOnboardingSchema, googleReviewUrlSchema } from "@/lib/validation";
+import { findDuplicateStoreName, DUPLICATE_NAME_WARNING } from "@/lib/duplicate-name";
 import type { ActionResult } from "@/app/login/actions";
 
 const LOGO_DIR = path.join(process.cwd(), "storage", "logos");
@@ -23,15 +24,21 @@ export async function updateStoreAction(
     name: string;
     category: string;
     address: string;
+    phone: string;
     description: string;
     latitude: number | null;
     longitude: number | null;
   },
-): Promise<ActionResult> {
+): Promise<ActionResult & { warning?: string }> {
   const { membership } = await requireStoreAdmin(slug);
 
   const parsed = storeOnboardingSchema.safeParse(input);
   if (!parsed.success) return { ok: false, error: parsed.error.issues[0].message };
+
+  const warning =
+    !parsed.data.address && !parsed.data.phone && (await findDuplicateStoreName(parsed.data.name, membership.storeId))
+      ? DUPLICATE_NAME_WARNING
+      : undefined;
 
   await prisma.store.update({
     where: { id: membership.storeId },
@@ -39,6 +46,7 @@ export async function updateStoreAction(
       name: parsed.data.name,
       category: parsed.data.category,
       address: parsed.data.address || null,
+      phone: parsed.data.phone || null,
       description: parsed.data.description || null,
       latitude: parsed.data.latitude ?? null,
       longitude: parsed.data.longitude ?? null,
@@ -46,6 +54,21 @@ export async function updateStoreAction(
   });
 
   revalidatePath(`/admin/${slug}`, "layout");
+  return { ok: true, warning };
+}
+
+export async function updateGoogleReviewUrlAction(slug: string, url: string): Promise<ActionResult> {
+  const { membership } = await requireStoreAdmin(slug);
+
+  const parsed = googleReviewUrlSchema.safeParse(url);
+  if (!parsed.success) return { ok: false, error: parsed.error.issues[0].message };
+
+  await prisma.store.update({
+    where: { id: membership.storeId },
+    data: { googleReviewUrl: parsed.data || null },
+  });
+
+  revalidatePath(`/${slug}`);
   return { ok: true };
 }
 

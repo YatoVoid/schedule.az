@@ -5,6 +5,7 @@ import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Calendar } from "@/components/ui/calendar";
+import { AddToCalendar } from "@/components/add-to-calendar";
 import { dateToIso, isoToDate, formatMinutes } from "@/lib/schedule";
 import {
   getRescheduleDatesAction,
@@ -19,9 +20,11 @@ export type AccountBooking = {
   id: string;
   storeName: string;
   storeSlug: string;
+  storeAddress: string | null;
   serviceName: string;
   staffName: string;
   startAt: string; // ISO
+  endAt: string; // ISO
   status: "PENDING_CONFIRMATION" | "CONFIRMED" | "DECLINED" | "CANCELLED" | "COMPLETED";
   note: string | null;
   unseen: boolean;
@@ -119,6 +122,19 @@ export function BookingRow({ booking, canManage }: { booking: AccountBooking; ca
           <span className="font-medium">Message from {booking.staffName}: </span>
           {booking.note}
         </p>
+      )}
+
+      {booking.status === "CONFIRMED" && (
+        <div className="mt-3">
+          <AddToCalendar
+            bookingId={booking.id}
+            title={`${booking.serviceName} at ${booking.storeName}`}
+            description={`Booked via Schedule.az with ${booking.staffName}`}
+            location={booking.storeAddress}
+            startAt={booking.startAt}
+            endAt={booking.endAt}
+          />
+        </div>
       )}
 
       {canManage && mode === "view" && (

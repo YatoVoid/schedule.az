@@ -161,3 +161,56 @@
     color: var(--primary-foreground);
   }
 }
+
+/* Leaflet ships its own opinionated popup chrome; restyle it to the
+   Carpet Register card treatment instead of the library's white/system-font
+   default. Scoped to .schedule-map-popup so it never touches any other
+   Leaflet instance. */
+.schedule-map-popup .leaflet-popup-content-wrapper {
+  background: var(--card) !important;
+  color: var(--card-foreground) !important;
+  border-radius: var(--radius-lg) !important;
+  padding: 0 !important;
+}
+.schedule-map-popup .leaflet-popup-content {
+  margin: 0 !important;
+  width: auto !important;
+}
+.schedule-map-popup .leaflet-popup-tip {
+  background: var(--card) !important;
+}
+.schedule-map-popup .leaflet-popup-close-button {
+  z-index: 10;
+  top: 8px !important;
+  right: 8px !important;
+  width: 22px !important;
+  height: 22px !important;
+  display: flex !important;
+  align-items: center;
+  justify-content: center;
+  border-radius: 9999px !important;
+  background: color-mix(in oklch, black 40%, transparent) !important;
+  color: white !important;
+  font-size: 15px !important;
+}
+.schedule-map-popup .leaflet-popup-close-button:hover {
+  background: color-mix(in oklch, black 55%, transparent) !important;
+  color: white !important;
+}
+/* Leaflet's base stylesheet styles every anchor inside .leaflet-container
+   (blue, underlined) at a specificity that beats Tailwind's own color/
+   text-decoration utilities, since Leaflet's CSS loads after ours (it's
+   imported inside the dynamically-loaded map chunk). Without this, the
+   "Open salon page" button reads as a plain hyperlink instead of a button. */
+.schedule-map-popup a {
+  color: inherit !important;
+  text-decoration: none !important;
+}
+/* The "Open business page" CTA is a solid madder-red button, not a plain
+   link — it needs its own, more specific override so the ivory button text
+   wins over the `color: inherit` rule above (which would otherwise pull in
+   the popup's dark card-foreground text color, reading as near-invisible
+   dark text on a red background). */
+.schedule-map-popup a.schedule-map-popup-cta {
+  color: var(--primary-foreground) !important;
+}

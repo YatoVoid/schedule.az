@@ -41,6 +41,16 @@ async function redirectForUser(userId: string, next?: string) {
   return membership.role === "ADMIN" ? `/admin/${membership.store.slug}` : `/staff/${membership.store.slug}`;
 }
 
+// Every login is routed through here so a username-less account (new
+// signup, or any pre-existing account from before this field existed) is
+// stopped at the Instagram-style profile-setup step exactly once, then sent
+// on to wherever redirectForUser would otherwise have taken it.
+async function resolvePostLoginRedirect(userId: string, username: string | null, next?: string) {
+  const destination = await redirectForUser(userId, next);
+  if (username) return destination;
+  return `/profile-setup?next=${encodeURIComponent(destination)}`;
+}
+
 export async function sendOtpAction(method: LoginMethod, raw: string): Promise<ActionResult> {
   if (method === "phone" && isDevTestPhone(raw)) {
     return { ok: true };
@@ -81,7 +91,7 @@ export async function verifyOtpAction(
     const session = await getSession();
     session.userId = user.id;
     await session.save();
-    return { ok: true, redirectTo: await redirectForUser(user.id, next) };
+    return { ok: true, redirectTo: await resolvePostLoginRedirect(user.id, user.username, next) };
   }
 
   const identifier = resolveIdentifier(method, raw);
@@ -97,5 +107,5 @@ export async function verifyOtpAction(
   session.userId = user.id;
   await session.save();
 
-  return { ok: true, redirectTo: await redirectForUser(user.id, next) };
+  return { ok: true, redirectTo: await resolvePostLoginRedirect(user.id, user.username, next) };
 }

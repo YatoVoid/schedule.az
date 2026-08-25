@@ -2,6 +2,7 @@
 
 import { useState, useTransition } from "react";
 import { toast } from "sonner";
+import { PhoneIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -20,6 +21,7 @@ export function SettingsForm({
     name: string;
     category: string;
     address: string;
+    phone: string;
     description: string;
     logoUrl: string | null;
     latitude: number | null;
@@ -33,6 +35,7 @@ export function SettingsForm({
     latitude: initial.latitude,
     longitude: initial.longitude,
   });
+  const [phone, setPhone] = useState(initial.phone);
   const [description, setDescription] = useState(initial.description);
   const [isPending, startTransition] = useTransition();
 
@@ -42,6 +45,7 @@ export function SettingsForm({
         name,
         category,
         address: addressValue.address,
+        phone,
         description,
         latitude: addressValue.latitude,
         longitude: addressValue.longitude,
@@ -50,7 +54,11 @@ export function SettingsForm({
         toast.error(result.error);
         return;
       }
-      toast.success("Saved");
+      if (result.warning) {
+        toast.warning(result.warning);
+      } else {
+        toast.success("Saved");
+      }
     });
   }
 
@@ -78,6 +86,24 @@ export function SettingsForm({
       </div>
 
       <AddressMapPicker value={addressValue} onChange={setAddressValue} />
+
+      <div className="flex flex-col gap-2">
+        <Label htmlFor="phone">Business phone (optional)</Label>
+        <div className="relative">
+          <PhoneIcon className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground" />
+          <Input
+            id="phone"
+            inputMode="tel"
+            placeholder="012 345 67 89"
+            value={phone}
+            onChange={(e) => setPhone(e.target.value)}
+            className="h-12 pl-10 text-base"
+          />
+        </div>
+        <p className="text-xs text-muted-foreground">
+          Shown to customers, and helps tell your business apart if another one shares its name.
+        </p>
+      </div>
 
       <div className="flex flex-col gap-2">
         <Label htmlFor="description">Description</Label>

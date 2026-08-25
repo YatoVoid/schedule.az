@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
+import { Suspense } from "react";
 import { Geist_Mono, Golos_Text, Unbounded } from "next/font/google";
 import { Toaster } from "@/components/ui/sonner";
+import { MobileTabBar } from "@/components/mobile-tab-bar";
 import "./globals.css";
 
 // Golos Text: Latin Extended (Azerbaijani ə/ğ/ı/ö/ş/ü/ç) plus Cyrillic in
@@ -25,10 +27,30 @@ const geistMono = Geist_Mono({
   subsets: ["latin"],
 });
 
+const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || "https://schedule.az";
+const TITLE = "Schedule.az, booking for Baku's service businesses";
+const DESCRIPTION =
+  "Book barbershops, salons, spas and other service businesses in Baku with a confirmed appointment, no more WhatsApp back and forth.";
+
 export const metadata: Metadata = {
-  title: "Schedule.az, booking for Baku's service businesses",
-  description:
-    "Book barbershops, salons and spas in Baku with confirmed appointments, no more WhatsApp mixups.",
+  metadataBase: new URL(SITE_URL),
+  title: { default: TITLE, template: "%s | Schedule.az" },
+  description: DESCRIPTION,
+  keywords: [
+    "Baku booking", "barbershop Baku", "salon Baku", "appointment booking Azerbaijan",
+    "spa booking Baku", "online booking Azerbaijan",
+  ],
+  alternates: { canonical: "/" },
+  robots: { index: true, follow: true },
+  openGraph: {
+    title: TITLE,
+    description: DESCRIPTION,
+    url: "/",
+    siteName: "Schedule.az",
+    type: "website",
+    locale: "en_US",
+  },
+  twitter: { card: "summary_large_image", title: TITLE, description: DESCRIPTION },
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
@@ -58,6 +80,9 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
           raster carrying its provenance.
         */}
         {children}
+        <Suspense fallback={null}>
+          <MobileTabBar />
+        </Suspense>
         <Toaster />
       </body>
     </html>

@@ -15,6 +15,7 @@ export default async function AdminLayout({
     { href: `/admin/${slug}/bookings`, label: "Bookings" },
     { href: `/admin/${slug}/services`, label: "Services" },
     { href: `/admin/${slug}/staff`, label: "Staff" },
+    { href: `/admin/${slug}/reviews`, label: "Reviews" },
     { href: `/admin/${slug}/settings`, label: "Branding" },
   ];
 

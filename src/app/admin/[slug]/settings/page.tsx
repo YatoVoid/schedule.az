@@ -5,6 +5,7 @@ import { storeImageUrl } from "@/lib/store-images";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { GalleryUploader } from "@/components/gallery-uploader";
 import { SettingsForm } from "./settings-form";
+import { GoogleReviewForm } from "./google-review-form";
 
 export default async function SettingsPage({
   params,
@@ -30,6 +31,7 @@ export default async function SettingsPage({
               name: store.name,
               category: store.category,
               address: store.address ?? "",
+              phone: store.phone ?? "",
               description: store.description ?? "",
               logoUrl: storeLogoUrl(store.id, store.logoUpdatedAt),
               latitude: store.latitude,
@@ -48,6 +50,15 @@ export default async function SettingsPage({
             slug={slug}
             initialImages={images.map((img) => ({ id: img.id, url: storeImageUrl(store.id, img) }))}
           />
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-lg">Reviews</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <GoogleReviewForm slug={slug} initialUrl={store.googleReviewUrl ?? ""} />
         </CardContent>
       </Card>
     </div>

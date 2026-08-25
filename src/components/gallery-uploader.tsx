@@ -159,7 +159,7 @@ export function GalleryUploader({
               type="button"
               disabled={isPending}
               onClick={() => handleDelete(img.id)}
-              className="shrink-0 rounded-sm px-2 py-1 text-xs text-muted-foreground hover:bg-muted hover:text-foreground"
+              className="shrink-0 rounded-sm px-2.5 py-2 text-xs text-muted-foreground hover:bg-muted hover:text-foreground"
             >
               Remove
             </button>

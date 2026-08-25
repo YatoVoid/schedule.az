@@ -8,11 +8,35 @@ Only staff who've actually set working hours show up as bookable, being an admin
 
 **Consumer side**: a public store page at `/{slug}` (e.g. `/kingston-test`) that's also the link businesses share on Instagram, a real booking engine (`src/lib/schedule.ts`, `src/lib/booking-slots.ts`) that computes actual open time slots *and* which calendar days have any opening at all (so the customer never clicks through empty days), inline phone/email OTP + name collection during the first booking (no separate signup step, name changeable later from the account page), and a `/account` area (upcoming, favorites, past, with reschedule/cancel). Declined or accepted bookings surface as an unread-style notification, with the staff's message, until the customer actually opens that tab. The directory homepage (`/`) lists every store with search (business name, category, or staff name) and a category filter.
 
-Not built yet: a real SMS/WhatsApp vendor (currently console-log stubs), payment collection, add-to-calendar (.ics) export, an Instagram-style signup step (username + profile picture, currently accounts have neither), and a pass to confirm every page is actually mobile-friendly rather than just responsive by default.
+Every login now routes a username-less account through `/profile-setup` (username + optional profile photo, Instagram-style) before it reaches its normal destination; `username`/`avatarMimeType`/`avatarUpdatedAt` live on `User`, avatar bytes on disk at `storage/avatars/{id}` same as store logos.
+
+The homepage directory has one combined "Filters" button (`src/components/directory-filters.tsx`), Wolt-style: sort by newest, closest-to-you (browser geolocation, Haversine distance against each store's saved coordinates), or best reviews, plus a category filter, all in one popover instead of three separate controls.
+
+The directory also renders a sticky Leaflet + OpenStreetMap panel (`src/components/directory-map.tsx`) next to the store list, with numbered pins (in each store's category color) matched to numbered list cards; on mobile the map opens as a full-screen dialog instead, and it's always rendered, even with zero results. List cards show a description, up to 3 services with price/duration, a rating pill, and a favorite-heart toggle. Clicking a pin opens a rich popup (photo, price-from, rating, services, "Open salon page").
+
+The store detail page (`/{slug}`) is a two-column layout at desktop widths: a sticky "book right here" rail beside the scrolling content, instead of the booking flow being a separate step scrolled far below the fold. The photo gallery shows a large photo + 2×2 grid with a "See all photos" dialog on wider screens; mobile keeps the original single-frame carousel.
+
+`/login` is a split-screen layout on desktop (madder-red brand panel with real value-prop copy, OTP form on the right, every input icon-prefixed), collapsing on mobile to a centered logo above the form. A persistent mobile bottom tab bar (Home/Search/Bookings/Favorites/Profile) now runs across every consumer-facing page, hidden on admin/staff dashboards and auth/onboarding screens.
+
+See `REDESIGN.md` for the full sira.az-benchmarked brief (now fully shipped) and the one remaining open question: how much of this should extend to the admin/staff dashboards, which has no external reference to benchmark against.
+
+The real logo is processed and wired in: a transparent-background circular mark (`public/logo-mark.png`) next to the wordmark in the header/login, and a circular favicon (`src/app/icon.png`).
+
+Ratings and reviews are built, with equal treatment for every rating. A rater always picks 1-5 stars plus an optional comment on the store detail page, gated on having an actual completed booking there. Every rating is saved and shown to that store's admins at `/admin/[slug]/reviews` (name, phone/email, rating, comment) and counts toward the store's public average/count, regardless of the number. Posting on Google is a separate, always-offered choice after submitting — the same "Also post this rating on Google" link appears no matter how positive or negative the rating was, never routed by sentiment. Store owners set their Google review link from `/admin/[slug]/settings`.
+
+One account can now own more than one business — `/onboarding` always offers "Add another business" instead of blocking a second `ADMIN` membership, and the dashboard nav's business switcher already supported multiple owned businesses.
+
+Add-to-calendar is built (`src/lib/calendar-links.ts`): a fresh booking confirmation and any confirmed upcoming booking in `/account` show "Add to Google Calendar" (a direct link, no file to download) and "Add to Apple Calendar" (`/api/bookings/[bookingId]/calendar.ics`, opens the native iOS Add Event sheet rather than downloading). Both carry the store name, time, and address; the Apple/ICS version also carries a fixed 8:00 AM Baku-time reminder on the day of the appointment (an absolute ICS alarm, not "N hours before") — Google Calendar's simple add-link has no equivalent, so a Google-added event just uses that account's own default reminder.
+
+Not built yet: a real SMS/WhatsApp vendor (currently console-log stubs), payment collection.
+
+Same-name-business disambiguation now covers the "neither has an address" case too. `Store.phone` is a real, owner-settable field (onboarding + `/admin/[slug]/settings`, shown on the public store page) — previously in the schema but never actually collected anywhere. The directory's disambiguator cascades address → phone → the store's own unique slug (`@store-slug`), so two same-named businesses always show genuinely different text, never both falling back to the same generic placeholder. The creation/rename nudge toast (`src/lib/duplicate-name.ts`) now only fires when both address and phone are blank.
+
+Mobile-friendliness audit is done. Admin/staff dashboards were measured at 390px for overflow and touch-target size (consumer pages were already covered by the redesign). Fixed: the dashboard nav's tab row now fades at its edge to signal it scrolls (it already did, silently, once a 6th tab stopped fitting); an undersized gallery "Remove" button was brought up to this app's normal minimum size. Nothing else needed fixing — no page had horizontal overflow. One thing flagged, not changed: most buttons app-wide sit under the 44×44px touch-target guideline, which is a deliberate compact-density choice baked into the shared `Button` component, not a bug — changing it would be a design-system-wide call that needs an explicit ask, not something to do as a side effect of an audit.
 
 ## Stack
 
-Next.js 16 (App Router) + TypeScript, Tailwind + shadcn/ui (Base UI primitives), Postgres via Prisma 6, OTP auth with iron-session cookies, zod validation. Login is phone-first (matches how local businesses operate and is what SMS reminders go to), with email-OTP as a secondary identity for people without an Azerbaijani number, mainly tourists booking as consumers ("Don't have a phone number?" on the login screen). Both SMS and email are behind provider interfaces (`src/lib/sms.ts`, `src/lib/email.ts`), currently console-log stubs since no vendor is selected yet; swapping in a real one is a one-file change each.
+Next.js 16 (App Router) + TypeScript, Tailwind + shadcn/ui (Base UI primitives), Postgres via Prisma 6, OTP auth with iron-session cookies, zod validation. Login is phone-first (matches how local businesses operate and is what SMS reminders go to), with email-OTP as a secondary identity for people without an Azerbaijani number, mainly tourists booking as consumers ("Don't have a phone number?" on the login screen). SMS (`src/lib/sms.ts`) is still a console-log stub, no vendor picked yet. **Email (`src/lib/email.ts`) now has a real Resend provider wired in**, gated behind two env vars (`RESEND_API_KEY`, `RESEND_FROM_EMAIL`) — unset (the default), it keeps printing codes to the console exactly as before; set both and it sends real email. `RESEND_FROM_EMAIL` has to be on a domain verified in the Resend dashboard (SPF/DKIM records added there) or delivery silently only reaches the account owner's own inbox.
 
 ## Local development
 
@@ -42,7 +66,7 @@ Then log in at `/login` with phone `0000`, code `0000`, to land on the admin das
 
 There's no formal test runner configured yet, `scripts/` holds a set of standalone checks instead, each run with `npx tsx scripts/<name>.ts` against your local database:
 
-- `seed-test-accounts.ts`, sets up phone `0000` as a store admin, `0001` as staff on that store, `0002` as a plain consumer (see the walkthrough above)
+- `seed-test-accounts.ts`, sets up phone `0000` as a store admin, `0001` as staff on that store (with Mon-Sat 09:00-18:00 hours and two services), `0002` as a plain consumer (see the walkthrough above) — the store is actually bookable right after running this, not just a placeholder
 - `verify-flow.ts`, seeds a demo store/staff/booking and prints sealed session cookies, for exercising the admin/staff dashboards without OTP by hand
 - `verify-phone-login.ts` / `verify-email-login.ts`, OTP round trip (send, wrong code rejected, correct code accepted, replay rejected, rate limit)
 - `verify-dev-test-phone.ts`, the `0000`-style dev login bypass
