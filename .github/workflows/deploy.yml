@@ -20,4 +20,33 @@ jobs:
           npm ci
           npx prisma migrate deploy
           npm run build
-          sudo pm2 restart schedule-az
+
+      # Runtime secrets that aren't in git. No-op until the repo secrets are
+      # set, so it never disturbs a hand-edited .env before then. When set, it
+      # replaces any existing managed lines and leaves the rest of the file
+      # (including comments) untouched.
+      - name: Sync runtime secrets into .env
+        env:
+          RESEND_API_KEY: ${{ secrets.RESEND_API_KEY }}
+          RESEND_FROM_EMAIL: ${{ secrets.RESEND_FROM_EMAIL }}
+        run: |
+          cd /home/schedule.az
+          node --input-type=module <<'EOF'
+          import { readFileSync, writeFileSync, existsSync, chmodSync } from "node:fs";
+
+          const managed = ["RESEND_API_KEY", "RESEND_FROM_EMAIL"];
+          if (!managed.some((k) => process.env[k])) process.exit(0);
+
+          const lines = existsSync(".env") ? readFileSync(".env", "utf8").split("\n") : [];
+          const kept = lines.filter((l) => !managed.includes(l.split("=", 1)[0].trim()));
+          for (const key of managed) {
+            const val = process.env[key];
+            if (val) kept.push(`${key}=${JSON.stringify(val)}`);
+          }
+          while (kept.length && kept[kept.length - 1].trim() === "") kept.pop();
+          writeFileSync(".env", kept.join("\n") + "\n");
+          chmodSync(".env", 0o600);
+          EOF
+
+      - name: Restart
+        run: sudo pm2 restart schedule-az
