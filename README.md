@@ -28,7 +28,14 @@ One account can now own more than one business — `/onboarding` always offers "
 
 Add-to-calendar is built (`src/lib/calendar-links.ts`): a fresh booking confirmation and any confirmed upcoming booking in `/account` show "Add to Google Calendar" (a direct link, no file to download) and "Add to Apple Calendar" (`/api/bookings/[bookingId]/calendar.ics`, opens the native iOS Add Event sheet rather than downloading). Both carry the store name, time, and address; the Apple/ICS version also carries a fixed 8:00 AM Baku-time reminder on the day of the appointment (an absolute ICS alarm, not "N hours before") — Google Calendar's simple add-link has no equivalent, so a Google-added event just uses that account's own default reminder.
 
-Not built yet: a real SMS/WhatsApp vendor (currently console-log stubs), payment collection.
+Reminders are built (`src/lib/reminders/`). An in-process loop started from `src/instrumentation.ts` plans and sends two kinds of message:
+
+- **Appointment reminder** — one nudge on the morning of a confirmed booking (08:00 Baku, or two hours before an early appointment), carrying the shop name and description, the staff member, date and time, address, and a Google Maps link. Transactional, always sent.
+- **Win-back reminder** — after a completed visit, one "time to come back" nudge timed to that business type's average return interval (`src/lib/return-cadence.ts`, e.g. barber 21d, hair salon 42d, nails 14d). Each completed visit re-arms exactly one outstanding nudge; sending it does not re-arm without another visit, so a lapsed customer gets one message, not a monthly drip. Suppressed if the customer already has an upcoming booking there or has used the stop link (`User.winbackOptOut`, one-tap at `/u/[token]`).
+
+Channel follows the account's contact details: a phone number means SMS only (even if an email is also set); email-only accounts get email. Caps: at most 5 reminder messages per user per day, at most one win-back per user per 7 days across all shops, 200 sends per cycle, 3 provider retries then parked. Delivery goes through the same `src/lib/sms.ts` / `src/lib/email.ts` providers as OTP, so without a real SMS vendor the SMS side is still a console stub. `POST /api/cron/run-reminders` (bearer `CRON_SECRET`) runs the same cycle on demand.
+
+Not built yet: a real SMS/WhatsApp vendor (currently a console-log stub), payment collection.
 
 Same-name-business disambiguation now covers the "neither has an address" case too. `Store.phone` is a real, owner-settable field (onboarding + `/admin/[slug]/settings`, shown on the public store page) — previously in the schema but never actually collected anywhere. The directory's disambiguator cascades address → phone → the store's own unique slug (`@store-slug`), so two same-named businesses always show genuinely different text, never both falling back to the same generic placeholder. The creation/rename nudge toast (`src/lib/duplicate-name.ts`) now only fires when both address and phone are blank.
 
@@ -36,7 +43,9 @@ Mobile-friendliness audit is done. Admin/staff dashboards were measured at 390px
 
 ## Stack
 
-Next.js 16 (App Router) + TypeScript, Tailwind + shadcn/ui (Base UI primitives), Postgres via Prisma 6, OTP auth with iron-session cookies, zod validation. Login is phone-first (matches how local businesses operate and is what SMS reminders go to), with email-OTP as a secondary identity for people without an Azerbaijani number, mainly tourists booking as consumers ("Don't have a phone number?" on the login screen). SMS (`src/lib/sms.ts`) is still a console-log stub, no vendor picked yet. **Email (`src/lib/email.ts`) now has a real Resend provider wired in**, gated behind two env vars (`RESEND_API_KEY`, `RESEND_FROM_EMAIL`) — unset (the default), it keeps printing codes to the console exactly as before; set both and it sends real email. `RESEND_FROM_EMAIL` has to be on a domain verified in the Resend dashboard (SPF/DKIM records added there) or delivery silently only reaches the account owner's own inbox.
+Next.js 16 (App Router) + TypeScript, Tailwind + shadcn/ui (Base UI primitives), Postgres via Prisma 6, OTP auth with iron-session cookies, zod validation. Login is phone-first (matches how local businesses operate and is what SMS reminders go to), with email-OTP as a secondary identity for people without an Azerbaijani number, mainly tourists booking as consumers ("Don't have a phone number?" on the login screen). SMS (`src/lib/sms.ts`) is still a console-log stub, no vendor picked yet. **Email (`src/lib/email.ts`) now has a real Resend provider wired in**, gated behind two env vars (`RESEND_API_KEY`, `RESEND_FROM_EMAIL`) — unset (the default), it keeps printing codes to the console exactly as before; set both and it sends real email. `RESEND_FROM_EMAIL` has to be on a domain verified in the Resend dashboard (SPF/DKIM records added there) or delivery silently only reaches the account owner's own inbox. On the server these two are held as GitHub Actions secrets and written into `.env` by the deploy workflow.
+
+Booking times are stored UTC-labeled but their digits are Baku wall-clock (AZT, UTC+4, no DST); `src/lib/baku-time.ts` holds the conversion used by the calendar files and the reminder scheduler.
 
 ## Local development
 

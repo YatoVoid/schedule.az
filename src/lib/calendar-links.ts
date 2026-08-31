@@ -1,17 +1,8 @@
-// Booking.startAt/endAt are stored as UTC-labeled timestamps whose digits
-// actually represent Baku wall-clock time (AZT, UTC+4, no DST) — the whole
-// booking engine (src/lib/schedule.ts) works this way consistently, on the
-// assumption the server process itself runs with TZ=UTC. External calendar
-// apps take a literal "Z" as real UTC and convert it to the viewer's own
-// timezone, so before handing a time to Google/Apple we have to shift it
-// back by the AZT offset to produce the true UTC instant — otherwise the
-// event would land 4 hours later than the actual appointment for anyone
-// not viewing from a UTC-clock device.
-const AZT_OFFSET_HOURS = 4;
-
-function toRealUtc(appDate: Date): Date {
-  return new Date(appDate.getTime() - AZT_OFFSET_HOURS * 60 * 60 * 1000);
-}
+// External calendar apps take a literal "Z" as real UTC and convert it to
+// the viewer's own timezone, so before handing a booking time to
+// Google/Apple it has to be shifted back to a true UTC instant. See
+// src/lib/baku-time.ts for the offset convention.
+import { bakuLabeledToRealUtc as toRealUtc, bakuHourOnDayOf } from "@/lib/baku-time";
 
 function icsTimestamp(d: Date): string {
   return d.toISOString().replace(/[-:]/g, "").split(".")[0] + "Z";
@@ -38,22 +29,10 @@ export function buildGoogleCalendarUrl(event: CalendarEvent): string {
   return `https://calendar.google.com/calendar/render?${params.toString()}`;
 }
 
-// Reminder fires at 8:00 AM Baku time on the day of the appointment,
-// regardless of what time the appointment itself is at — a fixed morning
-// nudge, not "N hours before," so it still fires a sensible amount ahead of
-// an early-morning booking and isn't a same-minute surprise for a late one.
+// The in-calendar alarm fires at 8:00 AM Baku time on the day of the
+// appointment, a fixed morning nudge rather than "N hours before."
 function morningReminderUtc(appointmentStartAt: Date): Date {
-  const morningInAppUtc = new Date(
-    Date.UTC(
-      appointmentStartAt.getUTCFullYear(),
-      appointmentStartAt.getUTCMonth(),
-      appointmentStartAt.getUTCDate(),
-      8,
-      0,
-      0,
-    ),
-  );
-  return toRealUtc(morningInAppUtc);
+  return bakuHourOnDayOf(appointmentStartAt, 8);
 }
 
 export function buildIcsFile(event: CalendarEvent & { uid: string }): string {

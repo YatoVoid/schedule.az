@@ -19,11 +19,11 @@ datasource db {
 // one of two nullable columns" without a raw CHECK constraint, which isn't
 // worth the extra migration complexity at this scale.
 model User {
-  id        String   @id @default(cuid())
-  phone     String?  @unique
-  email     String?  @unique
-  name      String?
-  createdAt DateTime @default(now())
+  id              String    @id @default(cuid())
+  phone           String?   @unique
+  email           String?   @unique
+  name            String?
+  createdAt       DateTime  @default(now())
   // Null until the Instagram-style profile-setup step runs, which every
   // login redirects a user through until it's set (see redirectForUser in
   // src/app/login/actions.ts). Stored lowercase; avatar bytes live on disk
@@ -32,11 +32,18 @@ model User {
   avatarMimeType  String?
   avatarUpdatedAt DateTime?
 
+  // Appointment reminders are transactional and always sent. This flag only
+  // suppresses the promotional "time to come back" win-back reminders, and
+  // is set by the one-tap stop link carried in every win-back message (see
+  // src/lib/unsubscribe.ts).
+  winbackOptOut Boolean @default(false)
+
   memberships StoreMember[]
   bookings    Booking[]
   favorites   Favorite[]
   otpCodes    OtpCode[]
   reviews     Review[]
+  reminders   ScheduledReminder[]
 }
 
 enum StoreMemberRole {
@@ -46,33 +53,34 @@ enum StoreMemberRole {
 
 // Tenant = Store. Every tenant-owned row below carries storeId.
 model Store {
-  id          String   @id @default(cuid())
-  slug        String   @unique
-  name        String
-  category    String
-  description String?
+  id              String    @id @default(cuid())
+  slug            String    @unique
+  name            String
+  category        String
+  description     String?
   // Logo bytes live on disk (storage/logos/{id}), not in Postgres or a
   // logoUrl column — see src/app/api/logos/[storeId]/route.ts. logoUpdatedAt
   // doubles as a cache-busting query param for the served image URL.
-  logoMimeType   String?
-  logoUpdatedAt  DateTime?
-  address     String?
-  latitude    Float?
-  longitude   Float?
-  phone       String?
+  logoMimeType    String?
+  logoUpdatedAt   DateTime?
+  address         String?
+  latitude        Float?
+  longitude       Float?
+  phone           String?
   // Where a customer who leaves a 4-5 star in-app rating gets sent to post
   // it publicly (e.g. a "g.page/r/.../review" link) — see Review below.
   // Null means the review flow just thanks them without a redirect.
   googleReviewUrl String?
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
 
-  members  StoreMember[]
-  services Service[]
-  bookings Booking[]
+  members   StoreMember[]
+  services  Service[]
+  bookings  Booking[]
   favorites Favorite[]
-  images   StoreImage[]
-  reviews  Review[]
+  images    StoreImage[]
+  reviews   Review[]
+  reminders ScheduledReminder[]
 
   @@index([category])
 }
@@ -106,9 +114,9 @@ model StoreMember {
   store Store @relation(fields: [storeId], references: [id], onDelete: Cascade)
   user  User  @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-  availability StaffAvailability[]
-  exceptions   AvailabilityException[]
-  bookingsAsStaff Booking[] @relation("BookingStaff")
+  availability    StaffAvailability[]
+  exceptions      AvailabilityException[]
+  bookingsAsStaff Booking[]               @relation("BookingStaff")
 
   @@unique([storeId, userId])
   @@index([storeId])
@@ -157,14 +165,14 @@ enum AvailabilityExceptionType {
 // dates is ignored at query time, only month+day are compared, so one row
 // covers every year without needing to be recreated.
 model AvailabilityException {
-  id                String                     @id @default(cuid())
+  id                String                    @id @default(cuid())
   storeMemberId     String
   startDate         DateTime
   endDate           DateTime
   type              AvailabilityExceptionType
-  recurringAnnually Boolean                    @default(false)
+  recurringAnnually Boolean                   @default(false)
   label             String?
-  createdAt         DateTime                   @default(now())
+  createdAt         DateTime                  @default(now())
 
   storeMember StoreMember @relation(fields: [storeMemberId], references: [id], onDelete: Cascade)
 
@@ -176,18 +184,18 @@ enum OtpPurpose {
 }
 
 model OtpCode {
-  id        String     @id @default(cuid())
-  userId    String
-  purpose   OtpPurpose
-  codeHash  String
-  expiresAt DateTime
+  id         String     @id @default(cuid())
+  userId     String
+  purpose    OtpPurpose
+  codeHash   String
+  expiresAt  DateTime
   consumedAt DateTime?
   // Wrong-code guesses against this row. Locked out at MAX_VERIFY_ATTEMPTS
   // (see src/lib/otp.ts) so a 6-digit code can't be brute-forced during its
   // 10-minute validity window; the identifier-level 3-per-10min send limit
   // still governs how many fresh codes/lockouts an attacker can churn through.
-  attempts  Int        @default(0)
-  createdAt DateTime   @default(now())
+  attempts   Int        @default(0)
+  createdAt  DateTime   @default(now())
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
@@ -228,40 +236,44 @@ enum BookingStatus {
 }
 
 model Booking {
-  id            String        @id @default(cuid())
-  storeId       String
-  serviceId     String
-  storeMemberId String // the staff member booked
-  userId        String // the consumer
-  startAt       DateTime
-  endAt         DateTime
-  status        BookingStatus @default(PENDING_CONFIRMATION)
-  note          String?
+  id                 String        @id @default(cuid())
+  storeId            String
+  serviceId          String
+  storeMemberId      String // the staff member booked
+  userId             String // the consumer
+  startAt            DateTime
+  endAt              DateTime
+  status             BookingStatus @default(PENDING_CONFIRMATION)
+  note               String?
   // The actual amount charged, entered by staff/admin when marking a
   // booking COMPLETED. This is what revenue analytics are computed from,
   // deliberately not Service.priceAzn, which is just the listed price and
   // can differ from what a customer was actually charged (discounts,
   // upsells, "discussed in store" services with no listed price at all).
-  priceAzn      Decimal?      @db.Decimal(10, 2)
+  priceAzn           Decimal?      @db.Decimal(10, 2)
   // Set whenever a customer reschedules, so staff can tell "new request"
   // from "moved request" in their queue instead of the two looking identical.
-  rescheduledAt DateTime?
+  rescheduledAt      DateTime?
   // Null means the customer hasn't seen this status yet. Set on creation
   // (they obviously know they just booked), cleared back to null whenever
   // staff/admin accepts or declines, and set again once the customer
   // actually views it in their account, that's the whole notification.
-  clientSeenStatusAt DateTime? @default(now())
-  createdAt     DateTime      @default(now())
-  updatedAt     DateTime      @updatedAt
+  clientSeenStatusAt DateTime?     @default(now())
+  createdAt          DateTime      @default(now())
+  updatedAt          DateTime      @updatedAt
 
-  store       Store       @relation(fields: [storeId], references: [id], onDelete: Cascade)
-  service     Service     @relation(fields: [serviceId], references: [id], onDelete: Cascade)
-  storeMember StoreMember @relation("BookingStaff", fields: [storeMemberId], references: [id], onDelete: Cascade)
-  user        User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  store       Store               @relation(fields: [storeId], references: [id], onDelete: Cascade)
+  service     Service             @relation(fields: [serviceId], references: [id], onDelete: Cascade)
+  storeMember StoreMember         @relation("BookingStaff", fields: [storeMemberId], references: [id], onDelete: Cascade)
+  user        User                @relation(fields: [userId], references: [id], onDelete: Cascade)
+  reminders   ScheduledReminder[]
 
   @@index([storeId])
   @@index([storeMemberId, startAt])
   @@index([userId])
+  // Planning scans for the most recent completed visit per customer to arm
+  // win-back reminders; this keeps that groupBy from a full table scan.
+  @@index([status, endAt])
 }
 
 model Favorite {
@@ -301,4 +313,65 @@ model Review {
 
   @@unique([userId, storeId])
   @@index([storeId])
+}
+
+enum ReminderKind {
+  APPOINTMENT // morning-of nudge before a confirmed booking (transactional)
+  WINBACK // "time to come back" nudge, cadence per business type (promotional)
+}
+
+enum ReminderChannel {
+  SMS
+  EMAIL
+}
+
+enum ReminderStatus {
+  PENDING // due to send once sendAt passes
+  SENDING // claimed by a worker run; a reaper requeues rows left stuck here
+  SENT
+  FAILED // gave up after MAX_ATTEMPTS provider errors
+  SKIPPED // rules said don't send (opted out, customer already rebooked, no channel)
+  CANCELLED // the booking it belonged to was cancelled/declined/moved
+}
+
+// The whole reminder pipeline is planned and sent by the background job
+// (src/lib/reminders/*), not by the booking mutation actions — the planner
+// re-derives what should exist from Booking state on every run, so it
+// self-heals and there are no send hooks scattered across the codebase.
+//
+// dedupeKey is the idempotency anchor: "appt:<bookingId>" for APPOINTMENT,
+// "winback:<userId>:<storeId>" for WINBACK. There is never more than one
+// outstanding WINBACK per customer+store; each completed visit re-arms that
+// single row, and sending it does not re-arm without a new visit.
+model ScheduledReminder {
+  id        String          @id @default(cuid())
+  kind      ReminderKind
+  channel   ReminderChannel
+  status    ReminderStatus  @default(PENDING)
+  dedupeKey String          @unique
+
+  userId    String
+  storeId   String
+  // Set for APPOINTMENT, null for WINBACK.
+  bookingId String?
+
+  sendAt   DateTime
+  // Snapshot of what this reminder was armed against: the booking's startAt
+  // for APPOINTMENT (so a reschedule is detected and sendAt moved), or the
+  // completed visit's endAt for WINBACK (so a newer visit re-arms it).
+  sourceAt DateTime
+
+  attempts  Int       @default(0)
+  lastError String?
+  sentAt    DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user    User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  store   Store    @relation(fields: [storeId], references: [id], onDelete: Cascade)
+  booking Booking? @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+
+  @@index([status, sendAt])
+  @@index([userId, kind, sentAt])
 }

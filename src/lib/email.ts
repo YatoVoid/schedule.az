@@ -1,9 +1,13 @@
 import { Resend } from "resend";
 
 // Abstracted so a real transactional provider can be dropped in without
-// touching call sites (mirrors src/lib/sms.ts).
+// touching call sites (mirrors src/lib/sms.ts). `body` is always the plain
+// text version; pass `opts.html` to also send a rich version (clients that
+// can render it will, the rest fall back to the text).
+export type EmailOptions = { html?: string };
+
 export interface EmailProvider {
-  send(toEmail: string, subject: string, body: string): Promise<void>;
+  send(toEmail: string, subject: string, body: string, opts?: EmailOptions): Promise<void>;
 }
 
 class ConsoleEmailProvider implements EmailProvider {
@@ -26,12 +30,13 @@ class ResendEmailProvider implements EmailProvider {
     this.from = from;
   }
 
-  async send(toEmail: string, subject: string, body: string): Promise<void> {
+  async send(toEmail: string, subject: string, body: string, opts?: EmailOptions): Promise<void> {
     const { error } = await this.client.emails.send({
       from: this.from,
       to: toEmail,
       subject,
       text: body,
+      ...(opts?.html ? { html: opts.html } : {}),
     });
     if (error) throw new Error(`Resend send failed: ${error.message}`);
   }
