@@ -200,6 +200,9 @@ model OtpCode {
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId, purpose])
+  // Backs the app-wide OTP send-rate ceiling in requestOtp (a proxy-
+  // independent cap on SMS cost during an abuse burst).
+  @@index([createdAt])
 }
 
 enum SecurityEventType {
@@ -253,7 +256,11 @@ model Booking {
   priceAzn           Decimal?      @db.Decimal(10, 2)
   // Set whenever a customer reschedules, so staff can tell "new request"
   // from "moved request" in their queue instead of the two looking identical.
+  // Also the throttle anchor: rescheduleBookingAction enforces a cooldown
+  // since this timestamp and a hard cap on rescheduleCount, so the
+  // reschedule -> re-confirm -> notify loop can't be pumped.
   rescheduledAt      DateTime?
+  rescheduleCount    Int           @default(0)
   // Null means the customer hasn't seen this status yet. Set on creation
   // (they obviously know they just booked), cleared back to null whenever
   // staff/admin accepts or declines, and set again once the customer
@@ -318,6 +325,7 @@ model Review {
 enum ReminderKind {
   APPOINTMENT // morning-of nudge before a confirmed booking (transactional)
   WINBACK // "time to come back" nudge, cadence per business type (promotional)
+  CONFIRMATION // sent once when staff/admin accept a pending booking (transactional)
 }
 
 enum ReminderChannel {

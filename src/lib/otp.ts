@@ -7,6 +7,17 @@ import { logSecurityEvent } from "@/lib/security-log";
 const OTP_TTL_MINUTES = 10;
 const OTP_WINDOW_MINUTES = 10;
 const OTP_MAX_PER_WINDOW = 3;
+
+// App-wide ceiling on OTP issuance, independent of which identity asked.
+// The per-identifier limit above stops one number being spammed; this
+// bounds the total SMS bill when an attacker cycles through many numbers
+// (each of which would otherwise get its own 3 free sends). Set well above
+// real launch traffic for Baku so it only bites during an actual burst.
+// Per-IP throttling is the missing third layer and should be added once the
+// app is behind the planned nginx proxy that sets a trustworthy
+// X-Forwarded-For; until then a client IP here can't be trusted.
+const OTP_GLOBAL_PER_MINUTE = 20;
+const OTP_GLOBAL_PER_HOUR = 200;
 // Caps guesses against a single issued code, independent of codeHash, so an
 // attacker can't brute-force the 6-digit space during the 10-minute TTL.
 const OTP_MAX_VERIFY_ATTEMPTS = 5;
@@ -51,9 +62,20 @@ async function findOrCreateUser(identifier: Identifier) {
 // added once the app sits behind a known reverse proxy that reports a
 // trustworthy client IP.
 export async function requestOtp(identifier: Identifier) {
+  const now = Date.now();
+
+  const [globalLastMinute, globalLastHour] = await Promise.all([
+    prisma.otpCode.count({ where: { createdAt: { gte: new Date(now - 60_000) } } }),
+    prisma.otpCode.count({ where: { createdAt: { gte: new Date(now - 60 * 60_000) } } }),
+  ]);
+  if (globalLastMinute >= OTP_GLOBAL_PER_MINUTE || globalLastHour >= OTP_GLOBAL_PER_HOUR) {
+    await logSecurityEvent("OTP_LOCKED", { detail: "global OTP rate ceiling hit" });
+    throw new OtpRateLimitError();
+  }
+
   const user = await findOrCreateUser(identifier);
 
-  const since = new Date(Date.now() - OTP_WINDOW_MINUTES * 60_000);
+  const since = new Date(now - OTP_WINDOW_MINUTES * 60_000);
   const recentCount = await prisma.otpCode.count({
     where: { userId: user.id, purpose: "LOGIN", createdAt: { gte: since } },
   });

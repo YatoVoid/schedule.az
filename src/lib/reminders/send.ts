@@ -108,7 +108,7 @@ async function processReminder(row: ReminderRow, now: Date): Promise<Outcome> {
 
   let ctx: ReminderContext;
 
-  if (row.kind === "APPOINTMENT") {
+  if (row.kind === "APPOINTMENT" || row.kind === "CONFIRMATION") {
     const b = row.booking;
     if (!b || b.status !== "CONFIRMED") {
       return finalize(row.id, "CANCELLED", "booking no longer confirmed", "cancelled");
@@ -117,7 +117,7 @@ async function processReminder(row: ReminderRow, now: Date): Promise<Outcome> {
       return finalize(row.id, "SKIPPED", "appointment already started", "skipped");
     }
     ctx = {
-      kind: "APPOINTMENT",
+      kind: row.kind,
       channel,
       userName: row.user.name,
       store: row.store,

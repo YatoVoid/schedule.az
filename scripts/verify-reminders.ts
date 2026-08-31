@@ -1,6 +1,7 @@
 import { prisma } from "../src/lib/prisma";
 import { planReminders } from "../src/lib/reminders/plan";
 import { runDueReminders } from "../src/lib/reminders/send";
+import { enqueueConfirmation } from "../src/lib/reminders/enqueue";
 import { appointmentSendAt } from "../src/lib/reminders/schedule-time";
 import { resolveReturnIntervalDays } from "../src/lib/return-cadence";
 import { AZT_OFFSET_MS } from "../src/lib/baku-time";
@@ -152,6 +153,67 @@ async function main() {
     where: { dedupeKey: `appt:${freshBooking.id}` },
   });
   check("declined booking cancels its reminder", cancelled?.status === "CANCELLED", cancelled?.status);
+
+  // --- CONFIRMATION: enqueued when a pending booking is accepted ---
+  const pendingBooking = await prisma.booking.create({
+    data: {
+      storeId: store.id,
+      serviceId: service.id,
+      storeMemberId: staff.id,
+      userId: emailUser.id,
+      startAt: bakuLabeled(now.getTime() + 26 * 60 * 60 * 1000),
+      endAt: bakuLabeled(now.getTime() + 26 * 60 * 60 * 1000 + service.durationMin * 60_000),
+      status: "PENDING_CONFIRMATION",
+    },
+  });
+
+  // Accept it, then enqueue exactly as the staff/admin action does.
+  await prisma.booking.update({ where: { id: pendingBooking.id }, data: { status: "CONFIRMED" } });
+  const b1 = await prisma.booking.findUnique({ where: { id: pendingBooking.id } });
+  await enqueueConfirmation(pendingBooking.id);
+  await enqueueConfirmation(pendingBooking.id); // double submit
+  const confirmRows = await prisma.scheduledReminder.findMany({
+    where: { kind: "CONFIRMATION", bookingId: pendingBooking.id },
+  });
+  check("accepting a booking queues one confirmation", confirmRows.length === 1, `got ${confirmRows.length}`);
+  check("confirmation channel matches contact", confirmRows[0]?.channel === "EMAIL");
+
+  const confirmSend = await runDueReminders(new Date(now.getTime() + 60_000));
+  check("confirmation sent", confirmSend.sent >= 1, JSON.stringify(confirmSend));
+  const confirmSent = await prisma.scheduledReminder.findUnique({
+    where: { dedupeKey: `confirm:${pendingBooking.id}:${b1!.startAt.getTime()}` },
+  });
+  check("confirmation row marked SENT", confirmSent?.status === "SENT", confirmSent?.status);
+
+  // Reschedule -> re-accept -> a fresh confirmation for the new time.
+  const movedStart = bakuLabeled(now.getTime() + 50 * 60 * 60 * 1000);
+  await prisma.booking.update({
+    where: { id: pendingBooking.id },
+    data: { startAt: movedStart, status: "CONFIRMED", rescheduledAt: new Date() },
+  });
+  await enqueueConfirmation(pendingBooking.id);
+  const confirmAfterMove = await prisma.scheduledReminder.count({
+    where: { kind: "CONFIRMATION", bookingId: pendingBooking.id },
+  });
+  check("reschedule + re-accept queues a new confirmation", confirmAfterMove === 2, `count ${confirmAfterMove}`);
+
+  // Declined booking: nothing queued.
+  const declinedBooking = await prisma.booking.create({
+    data: {
+      storeId: store.id,
+      serviceId: service.id,
+      storeMemberId: staff.id,
+      userId: emailUser.id,
+      startAt: bakuLabeled(now.getTime() + 40 * 60 * 60 * 1000),
+      endAt: bakuLabeled(now.getTime() + 40 * 60 * 60 * 1000 + service.durationMin * 60_000),
+      status: "DECLINED",
+    },
+  });
+  await enqueueConfirmation(declinedBooking.id);
+  const declinedConfirm = await prisma.scheduledReminder.count({
+    where: { kind: "CONFIRMATION", bookingId: declinedBooking.id },
+  });
+  check("declined booking queues no confirmation", declinedConfirm === 0);
 
   // --- WINBACK: a completed visit in the past arms a single nudge ---
   const interval = resolveReturnIntervalDays(store.category);

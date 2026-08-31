@@ -18,7 +18,7 @@ const EMAIL = {
 };
 
 export type ReminderContext = {
-  kind: "APPOINTMENT" | "WINBACK";
+  kind: "APPOINTMENT" | "WINBACK" | "CONFIRMATION";
   channel: "SMS" | "EMAIL";
   userName: string | null;
   store: {
@@ -139,6 +139,59 @@ function renderAppointment(ctx: ReminderContext): RenderedReminder {
   };
 }
 
+function renderConfirmation(ctx: ReminderContext): RenderedReminder {
+  const { store, staffName, startAt, userName } = ctx;
+  if (!startAt) throw new Error("confirmation needs startAt");
+
+  const date = bakuDate(startAt);
+  const time = bakuTime(startAt);
+  const maps = buildMapsUrl(store);
+  const hi = userName ? `${userName}, ` : "";
+
+  const sms = [
+    `Schedule.az: ${hi}your booking at ${store.name} on ${date} at ${time}` +
+      (staffName ? ` with ${staffName}` : "") +
+      " is confirmed.",
+    maps ? maps : null,
+  ]
+    .filter(Boolean)
+    .join("\n");
+
+  const text = [
+    `${hi}your booking at ${store.name} is confirmed.`,
+    ``,
+    `When: ${date}, ${time}`,
+    staffName ? `With: ${staffName}` : null,
+    store.address ? `Where: ${store.address}` : null,
+    maps ? `Map: ${maps}` : null,
+    ``,
+    `We'll send a reminder on the day.`,
+  ]
+    .filter((l) => l !== null)
+    .join("\n");
+
+  const html = htmlShell(
+    [
+      `<p style="margin:0 0 12px">${hi ? esc(userName!) + ", your" : "Your"} booking at <strong>${esc(store.name)}</strong> is confirmed.</p>`,
+      `<table style="border-collapse:collapse;margin:0 0 12px"><tbody>`,
+      `<tr><td style="padding:2px 12px 2px 0;color:${EMAIL.muted}">When</td><td style="padding:2px 0"><strong>${esc(date)}, ${esc(time)}</strong></td></tr>`,
+      staffName ? `<tr><td style="padding:2px 12px 2px 0;color:${EMAIL.muted}">With</td><td style="padding:2px 0">${esc(staffName)}</td></tr>` : "",
+      store.address ? `<tr><td style="padding:2px 12px 2px 0;color:${EMAIL.muted}">Where</td><td style="padding:2px 0">${esc(store.address)}</td></tr>` : "",
+      `</tbody></table>`,
+      maps
+        ? `<p style="margin:0 0 12px"><a href="${esc(maps)}" style="color:${EMAIL.primary}">Open in Google Maps</a></p>`
+        : "",
+      `<p style="margin:0;color:${EMAIL.muted}">We'll send a reminder on the day.</p>`,
+    ].filter(Boolean),
+  );
+
+  return {
+    subject: `Your booking at ${store.name} is confirmed`,
+    text: ctx.channel === "SMS" ? sms : text,
+    html,
+  };
+}
+
 function renderWinback(ctx: ReminderContext): RenderedReminder {
   const { store, userName, unsubscribeUrl } = ctx;
   const url = storeUrl(store.slug);
@@ -182,7 +235,12 @@ function renderWinback(ctx: ReminderContext): RenderedReminder {
 }
 
 export function renderReminder(ctx: ReminderContext): RenderedReminder {
-  const rendered = ctx.kind === "APPOINTMENT" ? renderAppointment(ctx) : renderWinback(ctx);
+  const rendered =
+    ctx.kind === "APPOINTMENT"
+      ? renderAppointment(ctx)
+      : ctx.kind === "CONFIRMATION"
+        ? renderConfirmation(ctx)
+        : renderWinback(ctx);
   if (ctx.channel === "SMS") return { subject: rendered.subject, text: smsClean(rendered.text) };
   return rendered;
 }

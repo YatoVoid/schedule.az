@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/prisma";
 import { requireStoreMember } from "@/lib/auth";
 import { availabilitySchema, availabilityExceptionSchema, chargedPriceSchema } from "@/lib/validation";
+import { enqueueConfirmation } from "@/lib/reminders/enqueue";
 import type { ActionResult } from "@/app/login/actions";
 
 export async function setAvailabilityAction(
@@ -121,6 +122,12 @@ export async function respondToBookingAction(
     data: { status, note: note.trim() || undefined, clientSeenStatusAt: null },
   });
   if (result.count === 0) return { ok: false, error: "Booking not found or already handled" };
+
+  if (status === "CONFIRMED") {
+    await enqueueConfirmation(bookingId).catch((err) =>
+      console.error("[reminders] failed to queue confirmation", err),
+    );
+  }
 
   revalidatePath(`/staff/${slug}`);
   return { ok: true };

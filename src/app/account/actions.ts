@@ -6,6 +6,12 @@ import { requireUser } from "@/lib/auth";
 import { getSlotsForMemberService, getAvailableDaysInRange } from "@/lib/booking-slots";
 import type { ActionResult } from "@/app/login/actions";
 
+// Each reschedule sends the booking back to the staff queue and, once
+// re-accepted, fires a fresh confirmation message. Cap how often one
+// booking can go around that loop.
+const MAX_RESCHEDULES_PER_BOOKING = 6;
+const RESCHEDULE_COOLDOWN_MS = 60 * 1000;
+
 export async function getRescheduleDatesAction(
   bookingId: string,
   fromIso: string,
@@ -60,6 +66,12 @@ export async function rescheduleBookingAction(
   if (!["PENDING_CONFIRMATION", "CONFIRMED"].includes(booking.status)) {
     return { ok: false, error: "This booking can't be changed anymore" };
   }
+  if (booking.rescheduleCount >= MAX_RESCHEDULES_PER_BOOKING) {
+    return { ok: false, error: "This booking has been changed too many times. Cancel it and book again." };
+  }
+  if (booking.rescheduledAt && Date.now() - booking.rescheduledAt.getTime() < RESCHEDULE_COOLDOWN_MS) {
+    return { ok: false, error: "You just changed this booking. Give it a minute before changing it again." };
+  }
 
   const stillAvailable = (
     await getSlotsForMemberService(booking.storeMemberId, booking.service.durationMin, dateIso, bookingId)
@@ -75,7 +87,13 @@ export async function rescheduleBookingAction(
   // the staff queue show "moved" instead of looking like a brand new request.
   await prisma.booking.update({
     where: { id: booking.id },
-    data: { startAt, endAt, status: "PENDING_CONFIRMATION", rescheduledAt: new Date() },
+    data: {
+      startAt,
+      endAt,
+      status: "PENDING_CONFIRMATION",
+      rescheduledAt: new Date(),
+      rescheduleCount: { increment: 1 },
+    },
   });
 
   revalidatePath("/account");

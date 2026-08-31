@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/prisma";
 import { requireStoreAdmin } from "@/lib/auth";
 import { chargedPriceSchema } from "@/lib/validation";
+import { enqueueConfirmation } from "@/lib/reminders/enqueue";
 import type { ActionResult } from "@/app/login/actions";
 
 // Admin-scoped: can accept/decline ANY staff member's pending booking,
@@ -21,6 +22,12 @@ export async function adminRespondToBookingAction(
     data: { status, note: note.trim() || undefined, clientSeenStatusAt: null },
   });
   if (result.count === 0) return { ok: false, error: "Booking not found or already handled" };
+
+  if (status === "CONFIRMED") {
+    await enqueueConfirmation(bookingId).catch((err) =>
+      console.error("[reminders] failed to queue confirmation", err),
+    );
+  }
 
   revalidatePath(`/admin/${slug}/bookings`);
   return { ok: true };
