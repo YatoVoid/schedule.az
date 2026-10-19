@@ -84,11 +84,10 @@ export function StorePanel({
       }}
       onMouseEnter={() => onHoverChange?.(true)}
       onMouseLeave={() => onHoverChange?.(false)}
-      className={`group/panel flex overflow-hidden rounded-md border bg-card transition-colors ${isActive ? "bg-secondary/60" : ""}`}
-      style={{ borderColor: guard, borderWidth: 2 }}
+      className={`surface group/panel flex overflow-hidden transition-shadow hover:shadow-md ${isActive ? "ring-2 ring-primary/30" : ""}`}
     >
       <div
-        className={`group/carousel relative aspect-square w-36 shrink-0 touch-pan-y overflow-hidden bg-muted select-none sm:w-48 ${showCarousel ? "cursor-grab active:cursor-grabbing" : ""}`}
+        className={`group/carousel relative aspect-square w-32 shrink-0 touch-pan-y overflow-hidden bg-muted select-none sm:w-44 ${showCarousel ? "cursor-grab active:cursor-grabbing" : ""}`}
         onPointerDown={(e) => {
           pausedRef.current = true;
           handlers.onPointerDown(e);
@@ -200,19 +199,19 @@ export function StorePanel({
         )}
       </div>
 
-      <div className="flex min-w-0 flex-1 flex-col gap-1.5 p-3">
+      <div className="flex min-w-0 flex-1 flex-col gap-1.5 p-3 sm:px-4">
         <div className="flex items-start justify-between gap-2">
-          <p className="font-heading text-sm font-medium leading-snug sm:text-base">{store.name}</p>
+          <p className="font-heading text-base font-semibold leading-snug tracking-tight text-primary sm:text-lg">{store.name}</p>
           {store.rating && (
             <span className="flex shrink-0 items-center gap-1 text-xs text-muted-foreground">
-              <StarIcon className="size-3 text-primary" fill="currentColor" />
+              <StarIcon className="size-3 text-coral" fill="currentColor" />
               <span className="font-medium text-foreground">{store.rating.average.toFixed(1)}</span>
               <span>({store.rating.count})</span>
             </span>
           )}
         </div>
         <span
-          className="w-fit max-w-full truncate rounded-sm px-1.5 py-0.5 text-[10px] font-medium uppercase tracking-wide"
+          className="w-fit max-w-full truncate rounded-sm px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wider"
           style={{ background: `color-mix(in oklch, ${guard} 16%, var(--card))`, color: guard }}
         >
           {store.category}
@@ -232,7 +231,7 @@ export function StorePanel({
           <div className="mt-1 flex flex-col divide-y divide-border border-t">
             {store.services.map((s) => (
               <div key={s.id} className="flex items-center justify-between gap-2 py-1.5 text-xs">
-                <span className="truncate">{s.name}</span>
+                <span className="truncate font-medium">{s.name}</span>
                 <span className="flex shrink-0 items-center gap-2 font-mono text-muted-foreground">
                   <span>{s.durationMin} min</span>
                   <span className="text-foreground">{s.priceAzn ? `${s.priceAzn} AZN` : "Ask"}</span>

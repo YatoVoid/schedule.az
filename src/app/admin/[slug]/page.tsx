@@ -87,22 +87,22 @@ export default async function AdminOverviewPage({
   return (
     <div className="flex flex-col gap-6">
       <div className="flex flex-col gap-2">
-        <p className="text-sm font-medium">Your public booking page</p>
+        <p className="eyebrow text-primary">Your public booking page</p>
         <CopyLink path={`/${slug}`} />
         <p className="text-xs text-muted-foreground">Share this on Instagram or wherever your customers find you.</p>
       </div>
 
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-        <StatCard label="Active services" value={serviceCount} href={`/admin/${slug}/services`} />
+        <StatCard label="Active services" value={serviceCount} href={`/admin/${slug}/services`} accent />
         <StatCard label="Team" value={allMembers.length} href={`/admin/${slug}/staff`} />
         <StatCard label="Upcoming bookings" value={upcomingBookingCount} href={`/admin/${slug}/bookings`} />
         <Link
           href={`/admin/${slug}/reviews`}
-          className="rounded-xl border bg-card p-4 transition-colors hover:bg-accent"
+          className="surface p-4 transition-colors hover:bg-sage-soft"
         >
           {ratingAgg._count.rating > 0 ? (
             <div className="flex items-center gap-1">
-              <StarIcon className="size-4 text-primary" fill="currentColor" />
+              <StarIcon className="size-4 text-coral" fill="currentColor" />
               <p className="text-2xl font-medium font-mono tabular-nums">{ratingAgg._avg.rating!.toFixed(1)}</p>
             </div>
           ) : (
@@ -131,17 +131,15 @@ export default async function AdminOverviewPage({
         </Card>
       )}
 
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-lg">This month</CardTitle>
-        </CardHeader>
-        <CardContent className="flex flex-col gap-5">
+      <section className="panel-sage flex flex-col gap-5 p-5 sm:p-6">
+        <h2 className="eyebrow text-sm text-primary">This month</h2>
+        <div className="flex flex-col gap-5">
           <div className="grid grid-cols-2 gap-3">
-            <div className="rounded-xl border bg-card p-4">
+            <div className="surface p-4">
               <p className="text-2xl font-medium font-mono tabular-nums">{monthlyCompleted.length}</p>
               <p className="text-xs text-muted-foreground">Completed bookings</p>
             </div>
-            <div className="rounded-xl border bg-card p-4">
+            <div className="surface p-4">
               <p className="text-2xl font-medium font-mono tabular-nums">{revenueThisMonth.toFixed(0)} AZN</p>
               <p className="text-xs text-muted-foreground">Revenue charged</p>
             </div>
@@ -156,7 +154,7 @@ export default async function AdminOverviewPage({
                 {staffLeaderboard.map((s, i) => (
                   <div
                     key={s.name + i}
-                    className="flex items-center justify-between gap-3 rounded-lg border bg-card px-3 py-2 text-sm"
+                    className="flex items-center justify-between gap-3 rounded-lg border bg-card px-3 py-2.5 text-sm"
                   >
                     <span className="min-w-0 truncate font-medium">{s.name}</span>
                     <span className="shrink-0 text-muted-foreground">
@@ -182,7 +180,7 @@ export default async function AdminOverviewPage({
                     {repeatCustomerList.slice(0, TOP_CUSTOMERS_LIMIT).map((c) => (
                       <div
                         key={c.name}
-                        className="flex items-center justify-between gap-3 rounded-lg border bg-card px-3 py-2 text-sm"
+                        className="flex items-center justify-between gap-3 rounded-lg border bg-card px-3 py-2.5 text-sm"
                       >
                         <span className="min-w-0 truncate font-medium">{c.name}</span>
                         <span className="shrink-0 text-muted-foreground">{c.count} bookings</span>
@@ -199,17 +197,20 @@ export default async function AdminOverviewPage({
               </>
             )}
           </div>
-        </CardContent>
-      </Card>
+        </div>
+      </section>
     </div>
   );
 }
 
-function StatCard({ label, value, href }: { label: string; value: number; href: string }) {
+function StatCard({ label, value, href, accent }: { label: string; value: number; href: string; accent?: boolean }) {
   return (
-    <Link href={href} className="rounded-xl border bg-card p-4 transition-colors hover:bg-accent">
+    <Link
+      href={href}
+      className={`surface p-4 transition-colors ${accent ? "border-blossom bg-blossom! text-blossom-foreground hover:bg-blossom/85!" : "hover:bg-sage-soft"}`}
+    >
       <p className="text-2xl font-medium font-mono tabular-nums">{value}</p>
-      <p className="text-xs text-muted-foreground">{label}</p>
+      <p className={`text-xs ${accent ? "opacity-80" : "text-muted-foreground"}`}>{label}</p>
     </Link>
   );
 }

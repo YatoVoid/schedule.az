@@ -11,7 +11,9 @@ export function AddToCalendar({
   location,
   startAt,
   endAt,
+  align = "center",
 }: {
+  align?: "center" | "start";
   bookingId: string;
   title: string;
   description: string;
@@ -28,7 +30,7 @@ export function AddToCalendar({
   });
 
   return (
-    <div className="flex flex-wrap justify-center gap-2">
+    <div className={`flex flex-wrap gap-2 ${align === "center" ? "justify-center" : "justify-start"}`}>
       <Button
         variant="outline"
         size="sm"

@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
+import { StatusPill } from "@/components/status-pill";
 import { adminRespondToBookingAction, adminCompleteBookingAction } from "./actions";
 
 export type AdminBookingRow = {
@@ -19,14 +20,6 @@ export type AdminBookingRow = {
   rescheduledAt: string | null;
   priceAzn: string | null;
   note: string | null;
-};
-
-const STATUS_LABEL: Record<AdminBookingRow["status"], string> = {
-  PENDING_CONFIRMATION: "Pending",
-  CONFIRMED: "Confirmed",
-  DECLINED: "Declined",
-  CANCELLED: "Cancelled",
-  COMPLETED: "Completed",
 };
 
 export function AdminBookingRow({
@@ -63,29 +56,27 @@ export function AdminBookingRow({
   }
 
   return (
-    <div className="flex flex-col gap-3 rounded-xl border bg-card p-4">
+    <div className="surface flex flex-col gap-3 p-4 sm:p-5">
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
-          <p className="truncate font-medium">{booking.serviceName}</p>
+          <p className="truncate text-base font-semibold">{booking.serviceName}</p>
           <p className="text-sm text-muted-foreground">
             {booking.customerName} with {booking.staffName}
           </p>
           {booking.customerContact && (
             <p className="text-sm text-muted-foreground">{booking.customerContact}</p>
           )}
-          <p className="text-sm text-muted-foreground">{new Date(booking.startAt).toLocaleString()}</p>
+          <p className="font-mono text-xs text-muted-foreground">{new Date(booking.startAt).toLocaleString()}</p>
           {booking.priceAzn && <p className="text-sm text-muted-foreground">Charged {booking.priceAzn} AZN</p>}
         </div>
         <div className="flex shrink-0 flex-col items-end gap-1">
-          <Badge variant={booking.status === "CONFIRMED" || booking.status === "COMPLETED" ? "default" : "outline"}>
-            {STATUS_LABEL[booking.status]}
-          </Badge>
+          <StatusPill status={booking.status} />
           {booking.rescheduledAt && <Badge variant="outline">Rescheduled</Badge>}
         </div>
       </div>
 
       {booking.note && (
-        <p className="rounded-lg bg-muted p-2 text-sm">
+        <p className="rounded-lg bg-sage-soft p-3 text-sm">
           <span className="font-medium">Note: </span>
           {booking.note}
         </p>
@@ -99,10 +90,10 @@ export function AdminBookingRow({
             onChange={(e) => setNote(e.target.value)}
           />
           <div className="flex gap-2">
-            <Button size="sm" className="flex-1" disabled={isPending} onClick={() => respond("CONFIRMED")}>
+            <Button variant="blossom" className="h-9 flex-1" disabled={isPending} onClick={() => respond("CONFIRMED")}>
               Accept
             </Button>
-            <Button size="sm" variant="outline" className="flex-1" disabled={isPending} onClick={() => respond("DECLINED")}>
+            <Button variant="outline" className="h-9 flex-1" disabled={isPending} onClick={() => respond("DECLINED")}>
               Decline
             </Button>
           </div>

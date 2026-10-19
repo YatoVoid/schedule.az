@@ -1,75 +1,94 @@
+import { Suspense } from "react";
 import Image from "next/image";
 import Link from "next/link";
+import { UserIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { BusinessSwitcher } from "@/components/business-switcher";
+import { HeaderNav, type HeaderLink } from "@/components/header-nav";
 import { logoutAction } from "@/app/actions";
 import type { UserMembership } from "@/lib/auth";
 
+const CONSUMER_LINKS: HeaderLink[] = [
+  { href: "/", label: "Discover" },
+  { href: "/account?tab=upcoming", label: "Bookings" },
+  { href: "/account?tab=favorites", label: "Favorites" },
+];
+
 export function SiteHeader({
   loggedIn,
-  showAccountLink = true,
+  userName,
   memberships = [],
+  links = CONSUMER_LINKS,
+  scrollLinksOnMobile = false,
+  currentSlug,
 }: {
   loggedIn: boolean;
-  showAccountLink?: boolean;
+  userName?: string | null;
   memberships?: UserMembership[];
+  links?: HeaderLink[];
+  // Dashboards have no bottom tab bar, so their section links stay
+  // reachable on phones as a scrolling second row. Consumer pages leave
+  // them to MobileTabBar.
+  scrollLinksOnMobile?: boolean;
+  currentSlug?: string;
 }) {
   return (
-    <header className="border-b bg-background/95 backdrop-blur">
-      <div className="mx-auto flex max-w-5xl items-center justify-between px-4 py-3">
-        <Link href="/" className="flex shrink-0 items-center gap-2 font-heading text-lg font-medium tracking-tight">
-          <Image src="/logo-mark.png" alt="" width={28} height={28} className="size-7" priority />
-          Schedule<span className="text-primary">.az</span>
+    <header className="sticky top-0 z-40 border-b bg-background/95 backdrop-blur-sm">
+      <div className="mx-auto grid max-w-7xl grid-cols-[auto_1fr_auto] items-center gap-4 px-4 py-3 sm:px-6">
+        <Link href="/" className="flex shrink-0 items-center gap-2 text-lg font-semibold tracking-tight">
+          <Image src="/logo-mark.png" alt="" width={30} height={30} className="size-7.5" priority />
+          Schedule.az
         </Link>
-        <nav className="flex items-center gap-2">
+
+        <Suspense fallback={<div />}>
+          <HeaderNav links={links} className="hidden justify-center md:flex" />
+        </Suspense>
+
+        <div className="flex items-center justify-end gap-2 sm:gap-3">
           {loggedIn ? (
             <>
-              {memberships.length === 1 && (
-                <Button
-                  render={<Link href={memberships[0].href} />}
-                  nativeButton={false}
-                  variant="outline"
-                  size="sm"
-                >
-                  <span className="sm:hidden">Dashboard</span>
-                  <span className="hidden sm:inline">
-                    {memberships[0].role === "ADMIN" ? "Business dashboard" : "Staff dashboard"}
-                  </span>
-                </Button>
+              {memberships.length > 0 && (
+                <BusinessSwitcher
+                  memberships={memberships}
+                  currentSlug={currentSlug}
+                  label="Your businesses"
+                  shortLabel="Businesses"
+                />
               )}
-              {memberships.length > 1 && (
-                <BusinessSwitcher memberships={memberships} label="Your businesses" shortLabel="Businesses" />
-              )}
-              {/* The bottom tab bar's Profile tab already covers account
-                  access and log out on mobile (src/components/mobile-tab-bar.tsx),
-                  so these are redundant there — and with a dashboard button
-                  in the mix too, keeping all three here overflowed the
-                  header at 390px, pushing into (and visually covering) the
-                  wordmark. */}
-              {showAccountLink && (
-                <Button
-                  render={<Link href="/account" />}
-                  nativeButton={false}
-                  variant="ghost"
-                  size="sm"
-                  className="hidden sm:inline-flex"
-                >
-                  My account
-                </Button>
-              )}
+              <Link
+                href="/account?tab=profile"
+                className={`items-center gap-1.5 rounded-md px-2 py-2 text-sm text-foreground hover:bg-muted ${scrollLinksOnMobile ? "flex" : "hidden sm:flex"}`}
+              >
+                <UserIcon className="size-4" />
+                <span className="sr-only max-w-32 truncate sm:not-sr-only">{userName || "My account"}</span>
+              </Link>
               <form action={logoutAction} className="hidden sm:block">
-                <Button type="submit" variant="ghost" size="sm">
+                <Button type="submit" variant="ghost" size="sm" className="text-muted-foreground">
                   Log out
                 </Button>
               </form>
             </>
           ) : (
-            <Button render={<Link href="/login?next=/account" />} nativeButton={false} variant="default" size="sm">
+            <Button
+              render={<Link href="/login?next=/account" />}
+              nativeButton={false}
+              size="sm"
+              className="h-9 rounded-full px-4"
+            >
               Log in
             </Button>
           )}
-        </nav>
+        </div>
       </div>
+
+      {scrollLinksOnMobile && (
+        <Suspense fallback={null}>
+          <HeaderNav
+            links={links}
+            className="overflow-x-auto px-2 pb-1 md:hidden"
+          />
+        </Suspense>
+      )}
     </header>
   );
 }

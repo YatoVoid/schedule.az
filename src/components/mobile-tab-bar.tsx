@@ -5,7 +5,7 @@ import { usePathname, useSearchParams } from "next/navigation";
 import { HomeIcon, SearchIcon, CalendarIcon, HeartIcon, UserIcon } from "lucide-react";
 
 // Consumer-facing only: hidden on admin/staff dashboards, onboarding, and
-// auth screens, which have their own navigation (DashboardNav, or are a
+// auth screens, which have their own navigation (SiteHeader section links, or are a
 // single-purpose screen with nothing to tab between). Scope intentionally
 // stops there until the admin/staff mobile-nav question is settled.
 const HIDDEN_PREFIXES = ["/admin", "/staff", "/onboarding", "/login", "/profile-setup"];

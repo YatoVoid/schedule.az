@@ -6,7 +6,7 @@ This project has to stop reading as an AI-generated website. Not "add personalit
 
 ## Banned patterns (generic AI/SaaS template tells)
 
-- **Dark-mode neon palette**: no pure black (`#000000`) or slate-gray (`#030712`, `#0b0f19`) backgrounds, no purple/cyan/magenta accent glows (`#8b5cf6`, `#06b6d4`, `#ec4899`). This project's palette is warm amber/terracotta on a warm off-white (see `globals.css`); stay inside that family. If a new page wants an accent color, it's a shade of the existing palette, not a new hue.
+- **Dark-mode neon palette**: no pure black (`#000000`) or slate-gray (`#030712`, `#0b0f19`) backgrounds, no purple/cyan/magenta accent glows (`#8b5cf6`, `#06b6d4`, `#ec4899`). This project's palette is forest green with sage, coral and blossom pink on a warm ivory (see `globals.css`); stay inside that family. If a new page wants an accent color, it's a shade of the existing palette, not a new hue.
 - **Gradient text headers**: no `bg-clip-text text-transparent` fading headlines. Set a real color.
 - **Hype badges**: no "✨ Introducing v2.0"-style pill above a headline. A status pill is fine only if it states a real, specific fact (e.g. actual onboarding status), never manufactured excitement.
 - **Floating dashboard mockup hero**: no angled fake-screenshot-in-a-browser-frame under the hero CTA.

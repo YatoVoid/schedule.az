@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef } from "react";
+import { SearchIcon } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { DirectoryFilters, type DirectorySort } from "@/components/directory-filters";
 
@@ -37,13 +38,17 @@ export function StoreSearchForm({
 
   return (
     <form ref={formRef} action="/" method="GET" className="flex flex-col items-stretch gap-2 sm:flex-row">
-      <Input
-        ref={inputRef}
-        name="q"
-        defaultValue={initialQuery}
-        placeholder="Search a business or a worker's name..."
-        className="h-12! flex-1 text-base"
-      />
+      <div className="relative flex-1">
+        <SearchIcon aria-hidden className="pointer-events-none absolute top-1/2 left-4 size-4 -translate-y-1/2 text-muted-foreground" />
+        <Input
+          ref={inputRef}
+          name="q"
+          defaultValue={initialQuery}
+          aria-label="Search businesses"
+          placeholder="Search a business or a worker's name..."
+          className="h-12! rounded-full border-sage-line bg-card pl-11 text-base shadow-sm"
+        />
+      </div>
       <DirectoryFilters
         formRef={formRef}
         initialSort={initialSort}

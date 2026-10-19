@@ -5,6 +5,7 @@ import { storeImageUrl } from "@/lib/store-images";
 import { distanceKm } from "@/lib/geo";
 import { SiteHeader } from "@/components/site-header";
 import { StoreSearchForm } from "@/components/store-search-form";
+import { DirectoryHero, OwnerBand } from "@/components/directory-hero";
 import { DirectoryView, type DirectoryStore } from "@/components/directory-view";
 import type { DirectorySort } from "@/components/directory-filters";
 
@@ -137,31 +138,43 @@ export default async function Home({
 
   return (
     <div className="flex flex-1 flex-col">
-      <SiteHeader loggedIn={!!currentUser} memberships={memberships} />
+      <SiteHeader loggedIn={!!currentUser} userName={currentUser?.name} memberships={memberships} />
 
-      <main className="mx-auto flex w-full max-w-6xl flex-1 flex-col gap-6 px-4 py-8">
-        <div className="flex flex-col gap-2">
-          <h1 className="font-heading text-2xl font-medium tracking-tight">Find a business to book</h1>
-          <p className="text-sm text-muted-foreground">
-            Search by business or by the professional you usually see.
-          </p>
-        </div>
+      <main className="flex flex-1 flex-col">
+        <DirectoryHero />
 
-        <StoreSearchForm
-          initialQuery={q}
-          initialCategory={category}
-          initialSort={sort}
-          initialLat={userLat !== null ? String(userLat) : ""}
-          initialLng={userLng !== null ? String(userLng) : ""}
-          categories={categories}
-          autoFocusSearch={autoFocusSearch}
-        />
+        <section id="discover" className="scroll-mt-20 bg-sage-soft py-14 sm:py-20">
+          <div className="mx-auto flex max-w-6xl flex-col gap-8 px-4 sm:px-6">
+            <div className="flex flex-col gap-3">
+              <p className="eyebrow text-coral">
+                {directoryStores.length} {directoryStores.length === 1 ? "place" : "places"} in Baku
+              </p>
+              <h2 className="font-serif text-5xl leading-[0.95] tracking-tight sm:text-6xl">
+                Pick a place,
+                <br />
+                <em className="text-primary">then a time.</em>
+              </h2>
+            </div>
 
-        <DirectoryView
-          stores={directoryStores}
-          isLoggedIn={!!currentUser}
-          emptyMessage={q || category ? "No businesses match that search." : "No businesses on Schedule.az yet."}
-        />
+            <StoreSearchForm
+              initialQuery={q}
+              initialCategory={category}
+              initialSort={sort}
+              initialLat={userLat !== null ? String(userLat) : ""}
+              initialLng={userLng !== null ? String(userLng) : ""}
+              categories={categories}
+              autoFocusSearch={autoFocusSearch}
+            />
+
+            <DirectoryView
+              stores={directoryStores}
+              isLoggedIn={!!currentUser}
+              emptyMessage={q || category ? "No businesses match that search." : "No businesses on Schedule.az yet."}
+            />
+          </div>
+        </section>
+
+        <OwnerBand />
       </main>
     </div>
   );

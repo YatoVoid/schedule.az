@@ -3,7 +3,8 @@
 import { useState, useTransition } from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
+import { StatusPill } from "@/components/status-pill";
+import { CategoryIcon } from "@/components/category-icon";
 import { Calendar } from "@/components/ui/calendar";
 import { AddToCalendar } from "@/components/add-to-calendar";
 import { dateToIso, isoToDate, formatMinutes } from "@/lib/schedule";
@@ -21,6 +22,7 @@ export type AccountBooking = {
   storeName: string;
   storeSlug: string;
   storeAddress: string | null;
+  storeCategory: string;
   serviceName: string;
   staffName: string;
   startAt: string; // ISO
@@ -30,12 +32,12 @@ export type AccountBooking = {
   unseen: boolean;
 };
 
-const STATUS_LABEL: Record<AccountBooking["status"], string> = {
-  PENDING_CONFIRMATION: "Pending",
-  CONFIRMED: "Confirmed",
-  DECLINED: "Declined",
-  CANCELLED: "Cancelled",
-  COMPLETED: "Completed",
+const DATE_FORMAT: Intl.DateTimeFormatOptions = {
+  month: "short",
+  day: "numeric",
+  year: "numeric",
+  hour: "numeric",
+  minute: "2-digit",
 };
 
 export function BookingRow({ booking, canManage }: { booking: AccountBooking; canManage: boolean }) {
@@ -97,36 +99,37 @@ export function BookingRow({ booking, canManage }: { booking: AccountBooking; ca
   }
 
   return (
-    <div className={`rounded-xl border bg-card p-4 ${booking.unseen ? "border-primary" : ""}`}>
-      <div className="flex items-start justify-between gap-3">
-        <div className="min-w-0">
+    <div className={`surface p-4 sm:p-5 ${booking.unseen ? "border-primary" : ""}`}>
+      <div className="flex items-start gap-4">
+        <span className="flex size-11 shrink-0 items-center justify-center rounded-full bg-sage-soft text-primary">
+          <CategoryIcon category={booking.storeCategory} className="size-5" />
+        </span>
+        <div className="min-w-0 flex-1">
           <div className="flex items-center gap-1.5">
-            {booking.unseen && <span className="h-2 w-2 shrink-0 rounded-full bg-primary" />}
-            <p className="truncate font-medium">{booking.serviceName}</p>
+            {booking.unseen && <span className="h-2 w-2 shrink-0 rounded-full bg-coral" />}
+            <p className="truncate text-base font-semibold">{booking.serviceName}</p>
           </div>
           <p className="text-sm text-muted-foreground">
-            {booking.storeName} with {booking.staffName}
+            {booking.storeName} · with {booking.staffName}
           </p>
-          <p className="text-sm text-muted-foreground">{new Date(booking.startAt).toLocaleString()}</p>
+          <p className="mt-1 font-mono text-xs text-muted-foreground">
+            {new Date(booking.startAt).toLocaleString(undefined, DATE_FORMAT)}
+          </p>
         </div>
-        <Badge
-          variant={booking.status === "CONFIRMED" || booking.status === "COMPLETED" ? "default" : "outline"}
-          className="shrink-0"
-        >
-          {STATUS_LABEL[booking.status]}
-        </Badge>
+        <StatusPill status={booking.status} />
       </div>
 
       {booking.note && (
-        <p className="mt-2 rounded-lg bg-muted p-2 text-sm">
+        <p className="mt-3 rounded-lg bg-sage-soft p-3 text-sm sm:ml-15">
           <span className="font-medium">Message from {booking.staffName}: </span>
           {booking.note}
         </p>
       )}
 
       {booking.status === "CONFIRMED" && (
-        <div className="mt-3">
+        <div className="mt-3 sm:ml-15">
           <AddToCalendar
+            align="start"
             bookingId={booking.id}
             title={`${booking.serviceName} at ${booking.storeName}`}
             description={`Booked via Schedule.az with ${booking.staffName}`}
@@ -138,7 +141,7 @@ export function BookingRow({ booking, canManage }: { booking: AccountBooking; ca
       )}
 
       {canManage && mode === "view" && (
-        <div className="mt-3 flex gap-2">
+        <div className="mt-3 flex gap-2 sm:ml-15">
           <Button variant="outline" size="sm" onClick={openReschedule}>
             Reschedule
           </Button>

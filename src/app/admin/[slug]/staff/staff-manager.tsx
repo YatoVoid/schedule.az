@@ -78,9 +78,9 @@ export function StaffManager({
 
   return (
     <div className="flex flex-col gap-6">
-      <Card>
+      <Card className="border-sage-line! bg-sage! [&_[data-slot=select-trigger]]:bg-card [&_input]:bg-card">
         <CardHeader>
-          <CardTitle className="text-lg">Add to your team</CardTitle>
+          <CardTitle className="text-xl font-medium tracking-tight">Add to your team</CardTitle>
         </CardHeader>
         <CardContent>
           <form
@@ -159,6 +159,7 @@ export function StaffManager({
 
             <Button
               type="submit"
+              variant="blossom"
               disabled={isPending || (!codeSent && !phoneValid) || (codeSent && code.trim().length === 0)}
               className="h-12 text-base"
             >
@@ -173,13 +174,17 @@ export function StaffManager({
           <p className="text-center text-sm text-muted-foreground">No team members yet.</p>
         )}
         {members.map((member) => (
-          <div key={member.id} className="flex items-center justify-between gap-3 rounded-xl border bg-card p-4">
+          <div key={member.id} className="surface flex items-center justify-between gap-3 p-4">
             <Link href={`/admin/${slug}/staff/${member.id}`} className="flex min-w-0 items-center gap-3">
-              <Avatar>
-                <AvatarFallback>{(member.name ?? member.phone ?? "??").slice(-2)}</AvatarFallback>
+              <Avatar className="size-10">
+                <AvatarFallback className="bg-sage-soft text-xs font-semibold text-primary">
+                  {member.name
+                    ? member.name.split(/\s+/).map((w) => w[0]).slice(0, 2).join("").toUpperCase()
+                    : (member.phone ?? "??").slice(-2)}
+                </AvatarFallback>
               </Avatar>
               <div className="min-w-0">
-                <p className="truncate font-medium">{member.name ?? "Unnamed"}</p>
+                <p className="truncate text-base font-medium">{member.name ?? "Unnamed"}</p>
                 <p className="text-sm text-muted-foreground">{member.phone}</p>
               </div>
             </Link>

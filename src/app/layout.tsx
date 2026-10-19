@@ -1,31 +1,36 @@
 import type { Metadata } from "next";
-import Link from "next/link";
 import { Suspense } from "react";
-import { Geist_Mono, Golos_Text, Unbounded } from "next/font/google";
+import { DM_Mono, DM_Sans, Golos_Text, Instrument_Serif } from "next/font/google";
 import { Toaster } from "@/components/ui/sonner";
 import { MobileTabBar } from "@/components/mobile-tab-bar";
+import { SiteFooter } from "@/components/site-footer";
 import "./globals.css";
 
-// Golos Text: Latin Extended (Azerbaijani ə/ğ/ı/ö/ş/ü/ç) plus Cyrillic in
-// one family, since store names and descriptions come from real Baku owners
-// in either script. Body/UI voice throughout.
-const bodyFont = Golos_Text({
-  variable: "--font-body",
-  subsets: ["latin", "latin-ext", "cyrillic"],
+const sansFont = DM_Sans({
+  variable: "--font-dm-sans",
+  subsets: ["latin", "latin-ext"],
 });
 
-// Unbounded: geometric, faceted, squared terminals — display voice only
-// (page titles, store names, category labels), echoing the woven-register
-// world's grid logic instead of a soft display serif.
-const displayFont = Unbounded({
+// DM Sans has no Cyrillic. Golos Text is listed after it so Cyrillic store
+// names and descriptions from Baku owners still render in a matching sans
+// instead of the OS default; its unicode-range keeps it from loading for
+// Latin-only pages.
+const cyrillicFallback = Golos_Text({
+  variable: "--font-golos",
+  subsets: ["cyrillic"],
+});
+
+const displayFont = Instrument_Serif({
   variable: "--font-display",
-  subsets: ["latin", "latin-ext", "cyrillic"],
-  weight: ["500", "700"],
+  subsets: ["latin", "latin-ext"],
+  weight: "400",
+  style: ["normal", "italic"],
 });
 
-const geistMono = Geist_Mono({
+const monoFont = DM_Mono({
   variable: "--font-geist-mono",
-  subsets: ["latin"],
+  subsets: ["latin", "latin-ext"],
+  weight: ["400", "500"],
 });
 
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || "https://schedule.az";
@@ -58,33 +63,11 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
     <html
       lang="en"
-      className={`${bodyFont.variable} ${displayFont.variable} ${geistMono.variable} h-full antialiased`}
+      className={`${sansFont.variable} ${cyrillicFallback.variable} ${displayFont.variable} ${monoFont.variable} h-full antialiased`}
     >
       <body className="min-h-full flex flex-col bg-background text-foreground">
-        {/*
-          THESIS: The directory is a woven register, not a card grid — every
-          business occupies one framed panel in a continuous field, refusing
-          the Yelp/Google-Maps list-of-shadow-cards default.
-          OWN-WORLD: Ivory wool ground, madder-red primary, hairline
-          guard-bands (not shadows) in rotating carpet-dye category colors;
-          Unbounded display, Golos Text body, Geist Mono for data.
-          STORY: A visitor recognizes real businesses by photo, name, and
-          category at a glance, the way you'd scan storefronts on a street,
-          and picks one to book with confidence.
-          FIRST VIEWPORT: Search bar, then a woven grid of guard-banded store
-          panels with cycling photo carousels; primary booking CTA sits
-          inside each panel, never floating chrome.
-          FORM: The Carpet Register (Azerbaijani carpet medallion grids),
-          direction 5 of 7, seed key 5386f9ec.
-          FINISH: unreviewed and undocumented is unfinished; this build ends
-          with the finish review, the verdict, DESIGN.md, and every shipping
-          raster carrying its provenance.
-        */}
         {children}
-        <footer className="mt-auto flex justify-center gap-4 border-t px-4 py-4 text-xs text-muted-foreground">
-          <Link href="/privacy" className="underline-offset-4 hover:underline">Privacy</Link>
-          <Link href="/terms" className="underline-offset-4 hover:underline">Terms</Link>
-        </footer>
+        <SiteFooter />
         <Suspense fallback={null}>
           <MobileTabBar />
         </Suspense>

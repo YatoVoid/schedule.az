@@ -52,9 +52,9 @@ export function ServiceManager({ slug, services }: { slug: string; services: Ser
 
   return (
     <div className="flex flex-col gap-6">
-      <Card>
+      <Card className="border-sage-line! bg-sage! [&_[data-slot=select-trigger]]:bg-card [&_input]:bg-card">
         <CardHeader>
-          <CardTitle className="text-lg">Add a service</CardTitle>
+          <CardTitle className="text-xl font-medium tracking-tight">Add a service</CardTitle>
         </CardHeader>
         <CardContent>
           <form
@@ -91,7 +91,7 @@ export function ServiceManager({ slug, services }: { slug: string; services: Ser
                 />
               </div>
             </div>
-            <Button type="submit" disabled={isPending || !name.trim()} className="h-12 text-base">
+            <Button type="submit" variant="blossom" disabled={isPending || !name.trim()} className="h-12 text-base">
               Add service
             </Button>
           </form>
@@ -105,10 +105,10 @@ export function ServiceManager({ slug, services }: { slug: string; services: Ser
         {services.map((service) => (
           <div
             key={service.id}
-            className="flex items-center justify-between gap-3 rounded-xl border bg-card p-4"
+            className="surface flex items-center justify-between gap-3 p-4"
           >
             <div className="min-w-0">
-              <p className="truncate font-medium">{service.name}</p>
+              <p className="truncate text-base font-medium">{service.name}</p>
               <p className="text-sm text-muted-foreground">
                 {service.durationMin} min · {service.priceAzn ? `${service.priceAzn} AZN` : "Discussed in store"}
               </p>

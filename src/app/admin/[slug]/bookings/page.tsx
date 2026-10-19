@@ -102,7 +102,7 @@ function Section({ title, hint, children }: { title: string; hint?: string; chil
   return (
     <div className="flex flex-col gap-3">
       <div>
-        <h2 className="text-sm font-medium text-muted-foreground">{title}</h2>
+        <h2 className="eyebrow text-muted-foreground">{title}</h2>
         {hint && <p className="text-xs text-muted-foreground">{hint}</p>}
       </div>
       {children}
@@ -111,5 +111,5 @@ function Section({ title, hint, children }: { title: string; hint?: string; chil
 }
 
 function Empty({ children }: { children: React.ReactNode }) {
-  return <p className="rounded-xl border bg-card p-6 text-center text-sm text-muted-foreground">{children}</p>;
+  return <p className="surface p-6 text-center text-sm text-muted-foreground">{children}</p>;
 }

@@ -9,7 +9,7 @@ import { StorePanel, type StoreListService } from "@/components/store-panel";
 
 const DirectoryMap = dynamic(() => import("@/components/directory-map").then((m) => m.DirectoryMap), {
   ssr: false,
-  loading: () => <div className="h-full w-full animate-pulse rounded-md bg-muted" />,
+  loading: () => <div className="h-full w-full animate-pulse bg-muted" />,
 });
 
 export type DirectoryStore = {
@@ -61,17 +61,17 @@ export function DirectoryView({
     .filter((s): s is typeof s & { latitude: number; longitude: number } => s.latitude != null && s.longitude != null);
 
   return (
-    <div className="grid grid-cols-1 gap-4 lg:grid-cols-[1fr_420px] lg:items-start">
+    <div className="grid grid-cols-1 gap-6 lg:grid-cols-[1fr_380px] lg:items-start">
       <div className="flex flex-col gap-3">
         <div className="flex items-center justify-between lg:hidden">
           <p className="text-sm text-muted-foreground">{stores.length} businesses</p>
-          <Button variant="outline" size="sm" className="gap-1.5" onClick={() => setMapOpen(true)}>
+          <Button variant="outline" size="sm" className="gap-1.5 rounded-full bg-card" onClick={() => setMapOpen(true)}>
             <MapIcon className="size-3.5" />
             Map view
           </Button>
         </div>
         {stores.length === 0 ? (
-          <p className="rounded-md border p-8 text-center text-sm text-muted-foreground">{emptyMessage}</p>
+          <p className="surface p-8 text-center text-sm text-muted-foreground">{emptyMessage}</p>
         ) : (
           stores.map((store, i) => (
             <StorePanel
@@ -86,7 +86,7 @@ export function DirectoryView({
         )}
       </div>
 
-      <div className="sticky top-4 hidden h-[calc(100vh-2rem)] max-h-[720px] overflow-hidden rounded-md border lg:block">
+      <div className="sticky top-20 hidden h-[calc(100vh-6rem)] max-h-[640px] overflow-hidden rounded-2xl border border-sage-line shadow-sm lg:block">
         <DirectoryMap stores={mapStores} activeId={hoveredId} onHoverChange={setHoveredId} />
       </div>
 
@@ -98,7 +98,7 @@ export function DirectoryView({
           <DialogHeader className="shrink-0 px-2 pt-1">
             <DialogTitle>Map view</DialogTitle>
           </DialogHeader>
-          <div className="min-h-0 flex-1 overflow-hidden rounded-md border">
+          <div className="min-h-0 flex-1 overflow-hidden rounded-xl border">
             {mapOpen && <DirectoryMap stores={mapStores} activeId={hoveredId} onHoverChange={setHoveredId} />}
           </div>
         </DialogContent>

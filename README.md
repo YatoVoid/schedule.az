@@ -16,7 +16,7 @@ The directory also renders a sticky Leaflet + OpenStreetMap panel (`src/componen
 
 The store detail page (`/{slug}`) is a two-column layout at desktop widths: a sticky "book right here" rail beside the scrolling content, instead of the booking flow being a separate step scrolled far below the fold. The photo gallery shows a large photo + 2×2 grid with a "See all photos" dialog on wider screens; mobile keeps the original single-frame carousel.
 
-`/login` is a split-screen layout on desktop (madder-red brand panel with real value-prop copy, OTP form on the right, every input icon-prefixed), collapsing on mobile to a centered logo above the form. A persistent mobile bottom tab bar (Home/Search/Bookings/Favorites/Profile) now runs across every consumer-facing page, hidden on admin/staff dashboards and auth/onboarding screens.
+`/login` is a split-screen layout on desktop (forest-green brand panel with real value-prop copy, OTP form on the right, every input icon-prefixed), collapsing on mobile to a centered logo above the form. A persistent mobile bottom tab bar (Home/Search/Bookings/Favorites/Profile) now runs across every consumer-facing page, hidden on admin/staff dashboards and auth/onboarding screens.
 
 See `REDESIGN.md` for the full sira.az-benchmarked brief (now fully shipped) and the one remaining open question: how much of this should extend to the admin/staff dashboards, which has no external reference to benchmark against.
 

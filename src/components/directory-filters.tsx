@@ -84,7 +84,7 @@ export function DirectoryFilters({
       <input type="hidden" name="lat" value={coords.lat} readOnly />
       <input type="hidden" name="lng" value={coords.lng} readOnly />
       <Popover open={open} onOpenChange={setOpen}>
-        <PopoverTrigger render={<Button variant="outline" size="lg" className="h-12! gap-2 px-4 text-base" />}>
+        <PopoverTrigger render={<Button variant="outline" size="lg" className="h-12! gap-2 rounded-full border-sage-line bg-card px-5 text-base shadow-sm" />}>
           <SlidersHorizontalIcon className="size-4" />
           Filters
           {activeCount > 0 && (

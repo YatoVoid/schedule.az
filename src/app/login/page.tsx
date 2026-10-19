@@ -14,7 +14,7 @@ export default async function LoginPage({
     <main className="flex min-h-screen flex-1">
       {/* Brand panel: desktop only, matches the sira-benchmarked split-screen
           pattern but in our own palette and with copy that's true today
-          (real Baku categories, real SMS-confirm mechanic), not borrowed
+          (real Baku categories, the business confirms each booking), not borrowed
           marketing language. */}
       <div className="relative hidden w-[42%] flex-col justify-between overflow-hidden bg-primary p-10 text-primary-foreground lg:flex">
         <Link href="/" className="flex items-center gap-2">
@@ -24,11 +24,13 @@ export default async function LoginPage({
           <span className="font-heading text-lg font-medium">Schedule.az</span>
         </Link>
         <div className="flex flex-col gap-2">
-          <h1 className="font-heading text-3xl leading-tight font-medium">
-            Book your next appointment in Baku.
+          <h1 className="font-serif text-6xl leading-[0.95] tracking-tight">
+            Book your next
+            <br />
+            <em className="text-blossom">appointment in Baku.</em>
           </h1>
-          <p className="text-sm text-primary-foreground/80">
-            Barbershops, salons, spas and more, confirmed by SMS, no back-and-forth over WhatsApp.
+          <p className="max-w-sm text-sm text-primary-foreground/80">
+            Barbershops, salons, spas and more, confirmed by the business, no back-and-forth over WhatsApp.
           </p>
         </div>
       </div>

@@ -9,7 +9,8 @@
   --color-foreground: var(--foreground);
   --font-sans: var(--font-body);
   --font-mono: var(--font-geist-mono);
-  --font-heading: var(--font-display);
+  --font-heading: var(--font-body);
+  --font-serif: var(--font-display);
   --color-sidebar-ring: var(--sidebar-ring);
   --color-sidebar-border: var(--sidebar-border);
   --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
@@ -44,6 +45,13 @@
   --color-guard-3: var(--guard-3);
   --color-guard-4: var(--guard-4);
   --color-guard-5: var(--guard-5);
+  --color-sage: var(--sage);
+  --color-sage-soft: var(--sage-soft);
+  --color-sage-line: var(--sage-line);
+  --color-coral: var(--coral);
+  --color-blossom: var(--blossom);
+  --color-blossom-foreground: var(--blossom-foreground);
+  --color-blossom-ink: var(--blossom-ink);
   --radius-sm: calc(var(--radius) * 0.5);
   --radius-md: calc(var(--radius) * 0.75);
   --radius-lg: var(--radius);
@@ -54,96 +62,135 @@
 }
 
 /*
-  THE CARPET REGISTER
-  The directory reads as a woven register: every business is a panel framed
-  by a hairline guard-band (--guard-1..5, rotated per category), never a
-  drop-shadow card. Ground is warm ivory wool, not paper-white. Madder red is
-  the one brand accent (booking actions); indigo and saffron are functional
-  wayfinding color, not decoration. Corners stay tight (6px) — the weave is
-  square, not soft.
+  CITY IN BLOOM
+  Warm ivory ground, forest green as the one action color, sage for grouped
+  panels, coral and blossom pink as the accents. Display moments use a
+  condensed serif with an italic second line; everything else is DM Sans.
+  Category colors (--guard-1..5) mark map pins and category chips only.
 */
 :root {
-  --background: oklch(0.965 0.012 75);
-  --foreground: oklch(0.22 0.014 55);
-  --card: oklch(0.99 0.007 75);
-  --card-foreground: oklch(0.22 0.014 55);
-  --popover: oklch(0.99 0.007 75);
-  --popover-foreground: oklch(0.22 0.014 55);
-  --primary: oklch(0.47 0.16 27);
-  --primary-foreground: oklch(0.98 0.012 75);
-  --secondary: oklch(0.93 0.014 70);
-  --secondary-foreground: oklch(0.3 0.02 60);
-  --muted: oklch(0.93 0.012 70);
-  --muted-foreground: oklch(0.48 0.02 60);
-  --accent: oklch(0.88 0.05 75);
-  --accent-foreground: oklch(0.32 0.07 50);
-  --destructive: oklch(0.5 0.18 25);
-  --border: oklch(0.84 0.018 65);
-  --input: oklch(0.84 0.018 65);
-  --ring: oklch(0.47 0.16 27);
-  --chart-1: oklch(0.47 0.16 27);
-  --chart-2: oklch(0.38 0.08 265);
-  --chart-3: oklch(0.62 0.13 80);
-  --chart-4: oklch(0.45 0.09 150);
-  --chart-5: oklch(0.42 0.1 330);
-  --radius: 0.375rem;
+  --font-body: var(--font-dm-sans), var(--font-golos), ui-sans-serif, system-ui, sans-serif;
+  --background: oklch(0.966 0.011 78);
+  --foreground: oklch(0.3 0.035 162);
+  --card: oklch(0.99 0.006 85);
+  --card-foreground: oklch(0.3 0.035 162);
+  --popover: oklch(0.99 0.006 85);
+  --popover-foreground: oklch(0.3 0.035 162);
+  --primary: oklch(0.46 0.075 162);
+  --primary-foreground: oklch(0.985 0.008 85);
+  --secondary: oklch(0.935 0.014 80);
+  --secondary-foreground: oklch(0.3 0.035 162);
+  --muted: oklch(0.935 0.012 80);
+  --muted-foreground: oklch(0.52 0.02 160);
+  --accent: oklch(0.93 0.03 140);
+  --accent-foreground: oklch(0.3 0.035 162);
+  --destructive: oklch(0.55 0.17 27);
+  --border: oklch(0.885 0.016 80);
+  --input: oklch(0.86 0.016 80);
+  --ring: oklch(0.46 0.075 162);
+  --chart-1: oklch(0.46 0.075 162);
+  --chart-2: oklch(0.66 0.13 35);
+  --chart-3: oklch(0.42 0.07 265);
+  --chart-4: oklch(0.7 0.12 80);
+  --chart-5: oklch(0.72 0.1 5);
+  --radius: 0.625rem;
 
-  /* Category guard-band rotation, drawn from natural carpet dyes. */
-  --guard-1: oklch(0.47 0.16 27); /* madder red */
-  --guard-2: oklch(0.38 0.08 265); /* indigo */
-  --guard-3: oklch(0.62 0.13 80); /* saffron/ochre */
-  --guard-4: oklch(0.45 0.09 150); /* bottle green */
-  --guard-5: oklch(0.42 0.1 330); /* plum */
+  --sage: oklch(0.915 0.032 138);
+  --sage-soft: oklch(0.952 0.016 130);
+  --sage-line: oklch(0.82 0.05 140);
+  --coral: oklch(0.64 0.13 35);
+  --blossom: oklch(0.78 0.085 10);
+  --blossom-foreground: oklch(0.25 0.03 20);
+  --blossom-ink: oklch(0.68 0.12 8);
 
-  --sidebar: oklch(0.955 0.012 75);
-  --sidebar-foreground: oklch(0.22 0.014 55);
-  --sidebar-primary: oklch(0.47 0.16 27);
-  --sidebar-primary-foreground: oklch(0.98 0.012 75);
-  --sidebar-accent: oklch(0.9 0.014 70);
-  --sidebar-accent-foreground: oklch(0.3 0.02 60);
-  --sidebar-border: oklch(0.84 0.018 65);
-  --sidebar-ring: oklch(0.47 0.16 27);
+  --guard-1: oklch(0.46 0.075 162); /* forest */
+  --guard-2: oklch(0.6 0.15 30); /* coral red */
+  --guard-3: oklch(0.42 0.07 265); /* slate blue */
+  --guard-4: oklch(0.66 0.12 80); /* ochre */
+  --guard-5: oklch(0.6 0.12 5); /* rose */
+
+  --sidebar: oklch(0.955 0.012 78);
+  --sidebar-foreground: oklch(0.3 0.035 162);
+  --sidebar-primary: oklch(0.46 0.075 162);
+  --sidebar-primary-foreground: oklch(0.985 0.008 85);
+  --sidebar-accent: oklch(0.93 0.03 140);
+  --sidebar-accent-foreground: oklch(0.3 0.035 162);
+  --sidebar-border: oklch(0.885 0.016 80);
+  --sidebar-ring: oklch(0.46 0.075 162);
 }
 
 .dark {
-  --background: oklch(0.2 0.014 55);
-  --foreground: oklch(0.94 0.012 75);
-  --card: oklch(0.25 0.016 55);
-  --card-foreground: oklch(0.94 0.012 75);
-  --popover: oklch(0.25 0.016 55);
-  --popover-foreground: oklch(0.94 0.012 75);
-  --primary: oklch(0.63 0.16 30);
-  --primary-foreground: oklch(0.16 0.014 55);
-  --secondary: oklch(0.3 0.016 55);
-  --secondary-foreground: oklch(0.94 0.012 75);
-  --muted: oklch(0.3 0.016 55);
-  --muted-foreground: oklch(0.68 0.016 65);
-  --accent: oklch(0.34 0.05 60);
-  --accent-foreground: oklch(0.94 0.012 75);
-  --destructive: oklch(0.65 0.18 25);
+  --background: oklch(0.2 0.015 162);
+  --foreground: oklch(0.94 0.012 85);
+  --card: oklch(0.25 0.018 162);
+  --card-foreground: oklch(0.94 0.012 85);
+  --popover: oklch(0.25 0.018 162);
+  --popover-foreground: oklch(0.94 0.012 85);
+  --primary: oklch(0.72 0.09 158);
+  --primary-foreground: oklch(0.18 0.02 162);
+  --secondary: oklch(0.3 0.018 162);
+  --secondary-foreground: oklch(0.94 0.012 85);
+  --muted: oklch(0.3 0.018 162);
+  --muted-foreground: oklch(0.7 0.018 150);
+  --accent: oklch(0.34 0.04 150);
+  --accent-foreground: oklch(0.94 0.012 85);
+  --destructive: oklch(0.66 0.17 27);
   --border: oklch(1 0 0 / 14%);
   --input: oklch(1 0 0 / 16%);
-  --ring: oklch(0.63 0.16 30);
-  --chart-1: oklch(0.63 0.16 30);
-  --chart-2: oklch(0.58 0.1 265);
-  --chart-3: oklch(0.7 0.13 80);
-  --chart-4: oklch(0.6 0.1 150);
-  --chart-5: oklch(0.58 0.11 330);
+  --ring: oklch(0.72 0.09 158);
+  --chart-1: oklch(0.72 0.09 158);
+  --chart-2: oklch(0.72 0.13 35);
+  --chart-3: oklch(0.65 0.08 265);
+  --chart-4: oklch(0.76 0.12 80);
+  --chart-5: oklch(0.76 0.1 5);
 
-  --guard-1: oklch(0.63 0.16 30);
-  --guard-2: oklch(0.58 0.1 265);
-  --guard-3: oklch(0.7 0.13 80);
-  --guard-4: oklch(0.6 0.1 150);
-  --guard-5: oklch(0.58 0.11 330);
+  --sage: oklch(0.3 0.03 145);
+  --sage-soft: oklch(0.24 0.02 145);
+  --sage-line: oklch(0.42 0.04 145);
+  --coral: oklch(0.74 0.12 35);
+  --blossom: oklch(0.72 0.09 10);
+  --blossom-foreground: oklch(0.2 0.03 20);
+  --blossom-ink: oklch(0.78 0.1 8);
 
-  --sidebar: oklch(0.23 0.015 55);
-  --sidebar-foreground: oklch(0.94 0.012 75);
-  --sidebar-primary: oklch(0.63 0.16 30);
-  --sidebar-primary-foreground: oklch(0.16 0.014 55);
-  --sidebar-accent: oklch(0.3 0.016 55);
-  --sidebar-accent-foreground: oklch(0.94 0.012 75);
+  --guard-1: oklch(0.72 0.09 158);
+  --guard-2: oklch(0.7 0.14 30);
+  --guard-3: oklch(0.66 0.08 265);
+  --guard-4: oklch(0.76 0.12 80);
+  --guard-5: oklch(0.74 0.11 5);
+
+  --sidebar: oklch(0.23 0.016 162);
+  --sidebar-foreground: oklch(0.94 0.012 85);
+  --sidebar-primary: oklch(0.72 0.09 158);
+  --sidebar-primary-foreground: oklch(0.18 0.02 162);
+  --sidebar-accent: oklch(0.3 0.018 162);
+  --sidebar-accent-foreground: oklch(0.94 0.012 85);
   --sidebar-border: oklch(1 0 0 / 12%);
-  --sidebar-ring: oklch(0.63 0.16 30);
+  --sidebar-ring: oklch(0.72 0.09 158);
+}
+
+/* Eyebrow label above a heading or section: small mono caps. */
+@utility eyebrow {
+  font-family: var(--font-mono);
+  font-size: 0.6875rem;
+  line-height: 1rem;
+  font-weight: 500;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+/* The white card used for list rows and form panels across the app. */
+@utility surface {
+  border-radius: var(--radius-xl);
+  border: 1px solid var(--border);
+  background: var(--card);
+  box-shadow: 0 1px 2px oklch(0.3 0.03 160 / 5%), 0 4px 14px -6px oklch(0.3 0.03 160 / 10%);
+}
+
+/* Sage panel that groups related cards (profile, "this month", add forms). */
+@utility panel-sage {
+  border-radius: var(--radius-2xl);
+  border: 1px solid var(--sage-line);
+  background: var(--sage);
 }
 
 @layer base {
@@ -163,7 +210,7 @@
 }
 
 /* Leaflet ships its own opinionated popup chrome; restyle it to the
-   Carpet Register card treatment instead of the library's white/system-font
+   app's card treatment instead of the library's white/system-font
    default. Scoped to .schedule-map-popup so it never touches any other
    Leaflet instance. */
 .schedule-map-popup .leaflet-popup-content-wrapper {
@@ -206,11 +253,11 @@
   color: inherit !important;
   text-decoration: none !important;
 }
-/* The "Open business page" CTA is a solid madder-red button, not a plain
+/* The "Open business page" CTA is a solid primary button, not a plain
    link — it needs its own, more specific override so the ivory button text
    wins over the `color: inherit` rule above (which would otherwise pull in
    the popup's dark card-foreground text color, reading as near-invisible
-   dark text on a red background). */
+   dark text on a green background). */
 .schedule-map-popup a.schedule-map-popup-cta {
   color: var(--primary-foreground) !important;
 }

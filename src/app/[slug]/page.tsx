@@ -1,9 +1,9 @@
 import { notFound } from "next/navigation";
 import type { Metadata } from "next";
-import Link from "next/link";
 import { StarIcon } from "lucide-react";
 import { prisma } from "@/lib/prisma";
-import { getCurrentUser } from "@/lib/auth";
+import { getCurrentUser, getUserMemberships } from "@/lib/auth";
+import { SiteHeader } from "@/components/site-header";
 import { storeLogoUrl } from "@/lib/logo";
 import { storeImageUrl } from "@/lib/store-images";
 import { categoryGuardVar } from "@/lib/category-color";
@@ -26,7 +26,7 @@ export async function generateMetadata({ params }: PageProps<"/[slug]">): Promis
   const title = `${store.name}, book online in Baku`;
   const description =
     store.description?.trim() ||
-    `Book an appointment at ${store.name}${store.address ? `, ${store.address}` : ", Baku"}. ${store.category}, confirmed by SMS.`;
+    `Book an appointment at ${store.name}${store.address ? `, ${store.address}` : ", Baku"}. ${store.category}, confirmed by the business.`;
   const image = store.images[0] ? storeImageUrl(store.id, store.images[0]) : storeLogoUrl(store.id, store.logoUpdatedAt);
   const ogImage = image ?? "/opengraph-image";
 
@@ -70,6 +70,7 @@ export default async function StorePage({
   if (!store) notFound();
 
   const currentUser = await getCurrentUser();
+  const memberships = currentUser ? await getUserMemberships(currentUser.id) : [];
   const [favorite, ratingAgg, existingReview, completedBooking] = await Promise.all([
     currentUser
       ? prisma.favorite.findUnique({ where: { userId_storeId: { userId: currentUser.id, storeId: store.id } } })
@@ -144,14 +145,13 @@ export default async function StorePage({
   };
 
   return (
-    <main className="mx-auto flex w-full max-w-4xl flex-col gap-6 px-4 py-8">
+    <>
+    <SiteHeader loggedIn={!!currentUser} userName={currentUser?.name} memberships={memberships} />
+    <main className="mx-auto flex w-full max-w-5xl flex-col gap-6 px-4 py-8">
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd).replace(/</g, "\\u003c") }}
       />
-      <Link href="/" className="text-sm text-muted-foreground underline underline-offset-4">
-        ← All businesses
-      </Link>
 
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-[1fr_340px] lg:items-start">
         <div className="flex flex-col gap-6">
@@ -160,10 +160,10 @@ export default async function StorePage({
           <div className="flex items-start gap-4">
             <Avatar className="h-16 w-16 shrink-0">
               {logoUrl && <AvatarImage src={logoUrl} alt="" />}
-              <AvatarFallback className="text-lg">{store.name.slice(0, 2).toUpperCase()}</AvatarFallback>
+              <AvatarFallback className="bg-primary text-lg font-semibold text-primary-foreground">{store.name.slice(0, 2).toUpperCase()}</AvatarFallback>
             </Avatar>
             <div className="flex min-w-0 flex-1 flex-col gap-1">
-              <h1 className="truncate font-heading text-2xl font-medium tracking-tight">{store.name}</h1>
+              <h1 className="truncate font-heading text-3xl font-medium tracking-tight">{store.name}</h1>
               <div className="flex flex-wrap items-center gap-2">
                 <Badge variant="outline">{store.category}</Badge>
                 {ratingSummary && (
@@ -228,10 +228,11 @@ export default async function StorePage({
             the second column and sticks, the sira-style "choose services,
             book right here" rail instead of a step scrolled far below. */}
         <div className="flex flex-col gap-3 lg:sticky lg:top-4 lg:col-start-2 lg:row-start-1">
-          <h2 className="text-sm font-medium text-muted-foreground">Book an appointment</h2>
+          <h2 className="eyebrow text-muted-foreground">Book an appointment</h2>
           {bookingFlow}
         </div>
       </div>
     </main>
+    </>
   );
 }

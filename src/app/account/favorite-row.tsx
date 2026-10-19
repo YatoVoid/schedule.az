@@ -30,14 +30,14 @@ export function FavoriteRow({
   }
 
   return (
-    <div className="flex items-center gap-3 rounded-xl border bg-card p-3">
+    <div className="surface flex items-center gap-3 p-4">
       <Link href={`/${slug}`} className="flex min-w-0 flex-1 items-center gap-3">
-        <Avatar>
+        <Avatar className="size-11">
           {logoUrl && <AvatarImage src={logoUrl} alt="" />}
-          <AvatarFallback>{name.slice(0, 2).toUpperCase()}</AvatarFallback>
+          <AvatarFallback className="bg-sage-soft font-semibold text-primary">{name.slice(0, 2).toUpperCase()}</AvatarFallback>
         </Avatar>
         <div className="min-w-0">
-          <p className="truncate font-medium">{name}</p>
+          <p className="truncate text-base font-semibold">{name}</p>
           <p className="text-sm text-muted-foreground">{category}</p>
         </div>
       </Link>
