@@ -4,6 +4,7 @@ import { useState, useTransition } from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { StatusPill } from "@/components/status-pill";
+import { formatBookingTime } from "@/lib/baku-time";
 import { CategoryIcon } from "@/components/category-icon";
 import { Calendar } from "@/components/ui/calendar";
 import { AddToCalendar } from "@/components/add-to-calendar";
@@ -113,7 +114,7 @@ export function BookingRow({ booking, canManage }: { booking: AccountBooking; ca
             {booking.storeName} · with {booking.staffName}
           </p>
           <p className="mt-1 font-mono text-xs text-muted-foreground">
-            {new Date(booking.startAt).toLocaleString(undefined, DATE_FORMAT)}
+            {formatBookingTime(booking.startAt, DATE_FORMAT)}
           </p>
         </div>
         <StatusPill status={booking.status} />

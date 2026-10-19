@@ -7,6 +7,16 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { StatusPill } from "@/components/status-pill";
+import { formatBookingTime } from "@/lib/baku-time";
+
+const DATE_FORMAT: Intl.DateTimeFormatOptions = {
+  weekday: "short",
+  month: "short",
+  day: "numeric",
+  year: "numeric",
+  hour: "numeric",
+  minute: "2-digit",
+};
 import { adminRespondToBookingAction, adminCompleteBookingAction } from "./actions";
 
 export type AdminBookingRow = {
@@ -66,7 +76,7 @@ export function AdminBookingRow({
           {booking.customerContact && (
             <p className="text-sm text-muted-foreground">{booking.customerContact}</p>
           )}
-          <p className="font-mono text-xs text-muted-foreground">{new Date(booking.startAt).toLocaleString()}</p>
+          <p className="font-mono text-xs text-muted-foreground">{formatBookingTime(booking.startAt, DATE_FORMAT)}</p>
           {booking.priceAzn && <p className="text-sm text-muted-foreground">Charged {booking.priceAzn} AZN</p>}
         </div>
         <div className="flex shrink-0 flex-col items-end gap-1">

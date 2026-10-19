@@ -163,7 +163,7 @@ export default async function StorePage({
               <AvatarFallback className="bg-primary text-lg font-semibold text-primary-foreground">{store.name.slice(0, 2).toUpperCase()}</AvatarFallback>
             </Avatar>
             <div className="flex min-w-0 flex-1 flex-col gap-1">
-              <h1 className="truncate font-heading text-3xl font-medium tracking-tight">{store.name}</h1>
+              <h1 className="font-heading text-2xl font-medium tracking-tight break-words sm:text-3xl">{store.name}</h1>
               <div className="flex flex-wrap items-center gap-2">
                 <Badge variant="outline">{store.category}</Badge>
                 {ratingSummary && (

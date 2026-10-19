@@ -6,6 +6,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
+import { StatusPill } from "@/components/status-pill";
+import { bakuNowLabeled, formatBookingTime } from "@/lib/baku-time";
 import { respondToBookingAction, completeBookingAction } from "./actions";
 
 export type BookingRow = {
@@ -20,14 +22,13 @@ export type BookingRow = {
 
 function dayLabel(iso: string) {
   const date = new Date(iso);
-  const today = new Date();
-  const tomorrow = new Date();
-  tomorrow.setDate(today.getDate() + 1);
+  const today = bakuNowLabeled();
+  const tomorrow = new Date(today.getTime() + 24 * 60 * 60 * 1000);
   const sameDay = (a: Date, b: Date) =>
-    a.getFullYear() === b.getFullYear() && a.getMonth() === b.getMonth() && a.getDate() === b.getDate();
+    a.getUTCFullYear() === b.getUTCFullYear() && a.getUTCMonth() === b.getUTCMonth() && a.getUTCDate() === b.getUTCDate();
   if (sameDay(date, today)) return "Today";
   if (sameDay(date, tomorrow)) return "Tomorrow";
-  return date.toLocaleDateString(undefined, { weekday: "long", month: "long", day: "numeric" });
+  return formatBookingTime(date, { weekday: "long", month: "long", day: "numeric" });
 }
 
 // Groups a date-sorted list into day sections, so "20 bookings this week"
@@ -44,7 +45,7 @@ function groupByDay<T extends { startAt: string }>(rows: T[]) {
 }
 
 function formatTime(iso: string) {
-  return new Date(iso).toLocaleTimeString(undefined, { hour: "numeric", minute: "2-digit" });
+  return formatBookingTime(iso, { hour: "numeric", minute: "2-digit" });
 }
 
 export function BookingQueue({ slug, bookings }: { slug: string; bookings: BookingRow[] }) {
@@ -78,7 +79,7 @@ export function BookingQueue({ slug, bookings }: { slug: string; bookings: Booki
 
   if (bookings.length === 0) {
     return (
-      <p className="rounded-xl border bg-card p-6 text-center text-sm text-muted-foreground">
+      <p className="surface p-6 text-center text-sm text-muted-foreground">
         No bookings yet. They&apos;ll show up here once customers can book online.
       </p>
     );
@@ -88,19 +89,19 @@ export function BookingQueue({ slug, bookings }: { slug: string; bookings: Booki
     <div className="flex flex-col gap-6">
       {pending.length > 0 && (
         <section className="flex flex-col gap-3">
-          <h2 className="text-sm font-medium text-muted-foreground">Needs your response</h2>
+          <h2 className="eyebrow text-muted-foreground">Needs your response</h2>
           {pending.map((b) => (
-            <div key={b.id} className="flex flex-col gap-3 rounded-xl border bg-card p-4">
+            <div key={b.id} className="surface flex flex-col gap-3 p-4 sm:p-5">
               <div className="flex items-start justify-between gap-3">
                 <div>
-                  <p className="font-medium">{b.serviceName}</p>
+                  <p className="text-base font-semibold">{b.serviceName}</p>
                   <p className="text-sm text-muted-foreground">
                     {b.customerName} · {dayLabel(b.startAt)} at {formatTime(b.startAt)}
                   </p>
                   {b.customerContact && <p className="text-sm text-muted-foreground">{b.customerContact}</p>}
                 </div>
                 <div className="flex flex-col items-end gap-1">
-                  <Badge variant="outline">Pending</Badge>
+                  <StatusPill status="PENDING_CONFIRMATION" />
                   {b.rescheduledAt && <Badge variant="outline">Rescheduled</Badge>}
                 </div>
               </div>
@@ -110,12 +111,12 @@ export function BookingQueue({ slug, bookings }: { slug: string; bookings: Booki
                 onChange={(e) => setNotes((prev) => ({ ...prev, [b.id]: e.target.value }))}
               />
               <div className="flex gap-2">
-                <Button className="flex-1" disabled={isPending} onClick={() => respond(b.id, "CONFIRMED")}>
+                <Button variant="blossom" className="h-9 flex-1" disabled={isPending} onClick={() => respond(b.id, "CONFIRMED")}>
                   Accept
                 </Button>
                 <Button
                   variant="outline"
-                  className="flex-1"
+                  className="h-9 flex-1"
                   disabled={isPending}
                   onClick={() => respond(b.id, "DECLINED")}
                 >
@@ -129,12 +130,12 @@ export function BookingQueue({ slug, bookings }: { slug: string; bookings: Booki
 
       {upcomingGroups.length > 0 && (
         <section className="flex flex-col gap-4">
-          <h2 className="text-sm font-medium text-muted-foreground">Confirmed</h2>
+          <h2 className="eyebrow text-muted-foreground">Confirmed</h2>
           {upcomingGroups.map((group) => (
             <div key={group.label} className="flex flex-col gap-2">
-              <p className="text-xs font-semibold tracking-wide text-muted-foreground uppercase">{group.label}</p>
+              <p className="eyebrow text-primary">{group.label}</p>
               {group.rows.map((b) => (
-                <div key={b.id} className="flex flex-col gap-3 rounded-xl border bg-card p-4">
+                <div key={b.id} className="surface flex flex-col gap-3 p-4 sm:p-5">
                   <div className="flex items-start justify-between gap-3">
                     <div>
                       <p className="font-medium">
@@ -145,7 +146,7 @@ export function BookingQueue({ slug, bookings }: { slug: string; bookings: Booki
                         {b.customerContact && ` · ${b.customerContact}`}
                       </p>
                     </div>
-                    <Badge>Confirmed</Badge>
+                    <StatusPill status="CONFIRMED" />
                   </div>
 
                   {completingId === b.id ? (

@@ -17,3 +17,16 @@ export function bakuHourOnDayOf(ref: Date, hour: number): Date {
   const labeled = Date.UTC(ref.getUTCFullYear(), ref.getUTCMonth(), ref.getUTCDate(), hour, 0, 0);
   return bakuLabeledToRealUtc(new Date(labeled));
 }
+
+// Display a booking time as the Baku wall-clock time it was booked for.
+// Reading the stored digits in the viewer's own timezone shifts the time by
+// that zone's offset (and differs between the server render and the
+// browser, which breaks hydration), so format in UTC with a fixed locale.
+export function formatBookingTime(appDate: Date | string, options: Intl.DateTimeFormatOptions): string {
+  return new Date(appDate).toLocaleString("en-US", { ...options, timeZone: "UTC" });
+}
+
+// Today's date in Baku, in the same UTC-labeled convention as Booking.startAt.
+export function bakuNowLabeled(): Date {
+  return new Date(Date.now() + AZT_OFFSET_MS);
+}
