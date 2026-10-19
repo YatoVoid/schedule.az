@@ -56,5 +56,16 @@ jobs:
           chmodSync(".env", 0o600);
           EOF
 
+      # The app runs under the whaletale user's own pm2 daemon (it's what
+      # resurrects it on boot). "sudo pm2" talks to root's daemon instead and
+      # silently restarted nothing, leaving the old server running against
+      # the new build. Fail the deploy if the restarted app doesn't answer.
       - name: Restart
-        run: sudo pm2 restart schedule-az
+        run: |
+          pm2 restart schedule-az --update-env
+          for i in $(seq 1 30); do
+            if curl -sf -o /dev/null http://127.0.0.1:3000/; then exit 0; fi
+            sleep 2
+          done
+          echo "schedule-az did not come back after restart" >&2
+          exit 1
