@@ -7,6 +7,7 @@ import { prisma } from "@/lib/prisma";
 import { requireUser } from "@/lib/auth";
 import { usernameSchema } from "@/lib/validation";
 import { matchesImageSignature } from "@/lib/image-sniff";
+import { checkUploadedImage } from "@/lib/image-moderation";
 import type { ActionResult } from "@/app/login/actions";
 
 const AVATAR_DIR = path.join(process.cwd(), "storage", "avatars");
@@ -47,6 +48,8 @@ export async function uploadAvatarAction(formData: FormData): Promise<ActionResu
 
   const bytes = Buffer.from(await file.arrayBuffer());
   if (!matchesImageSignature(file.type, bytes)) return { ok: false, error: "That file isn't a valid image" };
+  const moderation = await checkUploadedImage(bytes, { userId: user.id, kind: "avatar" });
+  if (!moderation.ok) return moderation;
 
   await mkdir(AVATAR_DIR, { recursive: true });
   await writeFile(path.join(AVATAR_DIR, user.id), bytes);

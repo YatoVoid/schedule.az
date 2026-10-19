@@ -8,6 +8,7 @@ import { requireStoreAdmin } from "@/lib/auth";
 import { storeOnboardingSchema, googleReviewUrlSchema } from "@/lib/validation";
 import { findDuplicateStoreName, DUPLICATE_NAME_WARNING } from "@/lib/duplicate-name";
 import { matchesImageSignature } from "@/lib/image-sniff";
+import { checkUploadedImage } from "@/lib/image-moderation";
 import type { ActionResult } from "@/app/login/actions";
 
 const LOGO_DIR = path.join(process.cwd(), "storage", "logos");
@@ -83,6 +84,8 @@ export async function uploadStoreLogoAction(slug: string, formData: FormData): P
 
   const bytes = Buffer.from(await file.arrayBuffer());
   if (!matchesImageSignature(file.type, bytes)) return { ok: false, error: "That file isn't a valid image" };
+  const moderation = await checkUploadedImage(bytes, { storeId: membership.storeId, kind: "logo" });
+  if (!moderation.ok) return moderation;
 
   await mkdir(LOGO_DIR, { recursive: true });
   await writeFile(path.join(LOGO_DIR, membership.storeId), bytes);
@@ -106,6 +109,8 @@ export async function uploadStoreImageAction(slug: string, formData: FormData): 
 
   const bytes = Buffer.from(await file.arrayBuffer());
   if (!matchesImageSignature(file.type, bytes)) return { ok: false, error: "That file isn't a valid image" };
+  const moderation = await checkUploadedImage(bytes, { storeId: membership.storeId, kind: "gallery" });
+  if (!moderation.ok) return moderation;
 
   const count = await prisma.storeImage.count({ where: { storeId: membership.storeId } });
   if (count >= MAX_STORE_IMAGES) return { ok: false, error: `Up to ${MAX_STORE_IMAGES} photos per store` };
