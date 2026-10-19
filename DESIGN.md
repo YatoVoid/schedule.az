@@ -67,6 +67,10 @@ rounded:
 - Dashboards add `StudioIntro` under the header: "Business studio" eyebrow, back link, store logo and name.
 - Consumer pages keep the mobile bottom tab bar; dashboards and onboarding do not.
 
+## Assets
+
+- `public/hero-baku.jpg`: photo by Zulfugar Karimov, https://unsplash.com/photos/WpBhCLZn6zY, Unsplash License (free for commercial use, no attribution required). Cropped to 5:4 and recompressed. The photo in the original Figma file was watermarked "@lyokin.photos" and was not used.
+
 ## Rules carried over
 
 - No claim on a page that isn't true today. The Figma copy about exhibitions, open-air tables and "spring day passes" was rewritten to describe booking. The mockup's notification toggles and Language/Region/Currency rows were left out because nothing backs them yet.

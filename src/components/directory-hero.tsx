@@ -39,9 +39,9 @@ export function DirectoryHero() {
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img
           src="/hero-baku.jpg"
-          alt="Flower beds along Baku Boulevard with the Caspian and the city skyline behind"
-          width={640}
-          height={800}
+          alt="Flower beds in a Baku park with one of the Flame Towers behind the trees"
+          width={1280}
+          height={1024}
           className="relative aspect-[5/4] w-full rounded-[2.5rem_8rem_2.5rem_8rem] object-cover shadow-xl shadow-primary/10 lg:w-[88%]"
         />
         <div className="surface absolute -bottom-5 right-0 flex rotate-[-3deg] items-center gap-2 px-4 py-2.5 text-xs font-medium text-primary sm:right-2">
