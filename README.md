@@ -1,6 +1,6 @@
 # Schedule.az
 
-Multi-tenant booking platform + directory for Baku service businesses (barbershops, salons, spas, tutoring centers, gyms). Replaces informal per-master WhatsApp booking with phone-verified accounts, staff calendars, SMS-confirmed bookings, and a central discovery directory.
+Multi-tenant booking platform + directory for Baku service businesses (barbershops, salons, spas, tutoring centers, gyms). Replaces informal per-master WhatsApp booking with phone-verified accounts, staff calendars, bookings the business confirms, and a central discovery directory.
 
 **Store side**: phone-OTP login, onboarding, service management (with optional "price discussed in store"), staff invites (as admin or staff), per-staff weekly hours + one-off/annual time-off exceptions with a color-coded calendar, booking accept/decline/complete (with the actual amount charged captured on completion, separate from a service's listed price), rescheduled bookings flagged for staff, admin bookings page split into needs-response/needs-completion/upcoming/past, a shareable public booking link, and real analytics (revenue from actual charged amounts, a full staff roster with this-month booking counts, top repeat customers, all computed from real data, no invented numbers).
 
@@ -18,7 +18,7 @@ The store detail page (`/{slug}`) is a two-column layout at desktop widths: a st
 
 `/login` is a split-screen layout on desktop (forest-green brand panel with real value-prop copy, OTP form on the right, every input icon-prefixed), collapsing on mobile to a centered logo above the form. A persistent mobile bottom tab bar (Home/Search/Bookings/Favorites/Profile) now runs across every consumer-facing page, hidden on admin/staff dashboards and auth/onboarding screens.
 
-See `REDESIGN.md` for the full sira.az-benchmarked brief (now fully shipped) and the one remaining open question: how much of this should extend to the admin/staff dashboards, which has no external reference to benchmark against.
+The visual system is "City in Bloom" (forest green, sage, coral and blossom pink; Instrument Serif, DM Sans, DM Mono), documented in `DESIGN.md`. See `REDESIGN.md` for the earlier sira.az-benchmarked layout brief (now fully shipped) and the one remaining open question: how much of this should extend to the admin/staff dashboards, which has no external reference to benchmark against.
 
 The real logo is processed and wired in: a transparent-background circular mark (`public/logo-mark.png`) next to the wordmark in the header/login, and a circular favicon (`src/app/icon.png`).
 
@@ -36,7 +36,7 @@ Reminders are built (`src/lib/reminders/`). An in-process loop started from `src
 
 Channel follows the account's contact details: a phone number means SMS only (even if an email is also set); email-only accounts get email. Caps: at most 5 reminder messages per user per day, at most one win-back per user per 7 days across all shops, 200 sends per cycle, 3 provider retries then parked. Delivery goes through the same `src/lib/sms.ts` / `src/lib/email.ts` providers as OTP, so without a real SMS vendor the SMS side is still a console stub. `POST /api/cron/run-reminders` (bearer `CRON_SECRET`) runs the same cycle on demand.
 
-Not built yet: a real SMS/WhatsApp vendor (currently a console-log stub), payment collection.
+Not built yet: payment collection. SMS goes through a self-hosted Jasmin gateway once `JASMIN_HTTP_URL`, `JASMIN_USERNAME` and `JASMIN_PASSWORD` are set; until then phone login codes and SMS reminders are only printed to the server log, so phone accounts can't log in and get no messages in production.
 
 Same-name-business disambiguation now covers the "neither has an address" case too. `Store.phone` is a real, owner-settable field (onboarding + `/admin/[slug]/settings`, shown on the public store page) — previously in the schema but never actually collected anywhere. The directory's disambiguator cascades address → phone → the store's own unique slug (`@store-slug`), so two same-named businesses always show genuinely different text, never both falling back to the same generic placeholder. The creation/rename nudge toast (`src/lib/duplicate-name.ts`) now only fires when both address and phone are blank.
 
@@ -44,14 +44,41 @@ Mobile-friendliness audit is done. Admin/staff dashboards were measured at 390px
 
 ## Stack
 
-Next.js 16 (App Router) + TypeScript, Tailwind + shadcn/ui (Base UI primitives), Postgres via Prisma 6, OTP auth with iron-session cookies, zod validation. Login is phone-first (matches how local businesses operate and is what SMS reminders go to), with email-OTP as a secondary identity for people without an Azerbaijani number, mainly tourists booking as consumers ("Don't have a phone number?" on the login screen). SMS (`src/lib/sms.ts`) is still a console-log stub, no vendor picked yet. **Email (`src/lib/email.ts`) now has a real Resend provider wired in**, gated behind two env vars (`RESEND_API_KEY`, `RESEND_FROM_EMAIL`) — unset (the default), it keeps printing codes to the console exactly as before; set both and it sends real email. `RESEND_FROM_EMAIL` has to be on a domain verified in the Resend dashboard (SPF/DKIM records added there) or delivery silently only reaches the account owner's own inbox. On the server these two are held as GitHub Actions secrets and written into `.env` by the deploy workflow.
+Next.js 16 (App Router) + TypeScript, Tailwind + shadcn/ui (Base UI primitives), Postgres via Prisma 6, OTP auth with iron-session cookies, zod validation. Login is phone-first (matches how local businesses operate and is what SMS reminders go to), with email-OTP as a secondary identity for people without an Azerbaijani number, mainly tourists booking as consumers ("Don't have a phone number?" on the login screen). SMS (`src/lib/sms.ts`) has a Jasmin gateway provider that stays a console-log stub until its three env vars are set. **Email (`src/lib/email.ts`) now has a real Resend provider wired in**, gated behind two env vars (`RESEND_API_KEY`, `RESEND_FROM_EMAIL`) — unset (the default), it keeps printing codes to the console exactly as before; set both and it sends real email. `RESEND_FROM_EMAIL` has to be on a domain verified in the Resend dashboard (SPF/DKIM records added there) or delivery silently only reaches the account owner's own inbox. On the server these two are held as GitHub Actions secrets and written into `.env` by the deploy workflow.
 
-Booking times are stored UTC-labeled but their digits are Baku wall-clock (AZT, UTC+4, no DST); `src/lib/baku-time.ts` holds the conversion used by the calendar files and the reminder scheduler.
+Booking times are stored UTC-labeled but their digits are Baku wall-clock (AZT, UTC+4, no DST); `src/lib/baku-time.ts` holds the conversion used by the calendar files and the reminder scheduler, and `formatBookingTime` shows them as Baku time whatever the viewer's timezone. The server process must run on Baku time (production's TZ is Asia/Baku): it's how the booking engine hides slots that already passed today.
+
+## Abuse and cost limits
+
+Every SMS and email, login codes and reminders alike, is reserved through `src/lib/send-budget.ts` before it reaches a provider. Each send is recorded in `MessageSend`, so the counts survive restarts. Defaults, all overridable in `.env`:
+
+| Limit | Default | Env var |
+| --- | --- | --- |
+| SMS per day, whole app | 300 | `SMS_DAILY_CAP` |
+| Email per day, whole app (Resend free tier is 100) | 90 | `EMAIL_DAILY_CAP` |
+| Messages per phone or email per day | 10 | `SEND_PER_RECIPIENT_DAILY_CAP` |
+| Login codes per IP per hour / day | 10 / 30 | `OTP_PER_IP_HOURLY_CAP`, `OTP_PER_IP_DAILY_CAP` |
+
+On top of that, `src/lib/otp.ts` keeps 3 codes per account per 10 minutes, 20 per minute and 200 per hour app-wide, and 5 guesses per code. SMS only goes to +994 numbers. A customer can have 3 bookings waiting for confirmation and make 10 bookings a day. A reminder that hits a cap waits an hour and retries instead of being dropped. Every hit is written to `SecurityEvent` (`SEND_BUDGET_HIT`, `BOOKING_LIMIT_HIT`).
+
+The client IP comes from `X-Real-IP`, which nginx sets from Cloudflare's `CF-Connecting-IP` (`set_real_ip_from` on Cloudflare's ranges), so it can't be spoofed by calling the server directly. Server actions accept bodies up to 9 MB (`next.config.ts`); nginx's `client_max_body_size` has to be at least that.
+
+## Photo moderation
+
+Avatars, logos and gallery photos are classified on this server before they're saved (`src/lib/image-moderation.ts`, nsfwjs MobileNetV2Mid in a worker thread, `scripts/image-moderation-worker.mjs`). No third-party API, so no per-image cost; a check takes about a second. A photo scored 0.7 or more Porn or Hentai is refused and logged as `IMAGE_REJECTED`; "Sexy" isn't blocked, since swimwear and beauty shots are normal for salons and spas. Tune with `IMAGE_BLOCK_THRESHOLD`. If the check can't run, the upload is refused rather than saved unchecked. This is not CSAM hash-matching (PhotoDNA and similar need an application to the provider).
+
+## Terms acceptance
+
+Login (and the sign-in inside the booking flow) requires an unticked-by-default "I agree to the Terms" box; the server refuses to send or verify a code without it and stores `User.termsAcceptedAt` and `User.termsVersion`. Bump `TERMS_VERSION` in `src/lib/terms.ts` when `/terms` changes materially: anyone on an older version is asked again at their next login or booking.
+
+## Database roles
+
+The running app connects as `schedule_app`, which can only read and write rows. Migrations run as the owner role `schedule` through `MIGRATE_DATABASE_URL` (the deploy workflow uses it when set). `scripts/db-roles.sql` creates and re-grants `schedule_app`; run it as a superuser.
 
 ## Local development
 
 ```bash
-docker compose up -d        # Postgres on localhost:5433
+docker compose up -d        # Postgres on localhost:5433 (or any Postgres 14+ on that port)
 cp .env.example .env        # then set SESSION_SECRET to a random 32+ byte hex string
 npm install
 npx prisma migrate deploy
