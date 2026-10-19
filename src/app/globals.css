@@ -203,6 +203,11 @@
   html {
     @apply font-sans;
   }
+  @media (prefers-reduced-motion: no-preference) {
+    html {
+      scroll-behavior: smooth;
+    }
+  }
   ::selection {
     background: var(--primary);
     color: var(--primary-foreground);

@@ -24,7 +24,7 @@ export default async function LoginPage({
           <span className="font-heading text-lg font-medium">Schedule.az</span>
         </Link>
         <div className="flex flex-col gap-2">
-          <h1 className="font-serif text-6xl leading-[0.95] tracking-tight">
+          <h1 className="font-serif text-6xl leading-[1.05] tracking-tight">
             Book your next
             <br />
             <em className="text-blossom">appointment in Baku.</em>

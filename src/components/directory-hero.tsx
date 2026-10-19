@@ -11,7 +11,7 @@ export function DirectoryHero() {
           <span aria-hidden className="hidden h-3 w-px bg-coral/60 sm:block" />
           <span className="hidden sm:inline">Find a business to book</span>
         </p>
-        <h1 className="font-serif text-6xl leading-[0.9] tracking-tight text-foreground sm:text-7xl lg:text-8xl">
+        <h1 className="font-serif text-6xl leading-[1.05] tracking-tight text-foreground sm:text-7xl lg:text-8xl">
           Book your next
           <br />
           <em className="text-coral">appointment.</em>
@@ -65,7 +65,7 @@ export function OwnerBand() {
       <div className="mx-auto grid max-w-6xl items-center gap-10 rounded-[2rem] bg-blossom px-6 py-12 text-blossom-foreground sm:px-12 lg:grid-cols-[1fr_auto]">
         <div className="flex flex-col gap-4">
           <p className="eyebrow opacity-75">For business owners</p>
-          <h2 className="font-serif text-4xl leading-[0.95] tracking-tight sm:text-5xl">
+          <h2 className="font-serif text-4xl leading-[1.05] tracking-tight sm:text-5xl">
             Run a salon, barbershop or spa?
             <br />
             <em>Take bookings here.</em>

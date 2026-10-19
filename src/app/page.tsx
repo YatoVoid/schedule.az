@@ -149,7 +149,7 @@ export default async function Home({
               <p className="eyebrow text-coral">
                 {directoryStores.length} {directoryStores.length === 1 ? "place" : "places"} in Baku
               </p>
-              <h2 className="font-serif text-5xl leading-[0.95] tracking-tight sm:text-6xl">
+              <h2 className="font-serif text-5xl leading-[1.05] tracking-tight sm:text-6xl">
                 Pick a place,
                 <br />
                 <em className="text-primary">then a time.</em>
