@@ -1,7 +1,8 @@
 // Booking.startAt/endAt are UTC-labeled Dates whose digits actually
 // represent Baku wall-clock time (AZT, UTC+4, no DST). The booking engine
-// in src/lib/schedule.ts works entirely in that convention, on the
-// assumption the server process runs with TZ=UTC. Anything that compares a
+// in src/lib/schedule.ts works entirely in that convention; the one place
+// it reads the process clock (hiding today's past slots) expects the server
+// to run on Baku time, which production does (TZ Asia/Baku). Anything that compares a
 // booking time against a real instant (calendar files, the reminder
 // scheduler) has to shift it back to true UTC first, or it lands 4 hours
 // off for anyone not on a UTC-clock device.

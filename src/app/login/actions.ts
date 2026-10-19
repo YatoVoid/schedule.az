@@ -6,6 +6,7 @@ import { normalizePhone, isDevTestPhone } from "@/lib/phone";
 import { phoneSchema, otpCodeSchema, emailSchema } from "@/lib/validation";
 import { getSession } from "@/lib/session";
 import { logSecurityEvent } from "@/lib/security-log";
+import { TERMS_VERSION } from "@/lib/terms";
 
 export type ActionResult = { ok: true } | { ok: false; error: string };
 export type LoginMethod = "phone" | "email";
@@ -52,7 +53,17 @@ async function resolvePostLoginRedirect(userId: string, username: string | null,
   return `/profile-setup?next=${encodeURIComponent(destination)}`;
 }
 
-export async function sendOtpAction(method: LoginMethod, raw: string): Promise<ActionResult> {
+const TERMS_REQUIRED = "Tick the box to agree to the Terms before continuing.";
+
+async function recordTermsAcceptance(userId: string) {
+  await prisma.user.update({
+    where: { id: userId },
+    data: { termsAcceptedAt: new Date(), termsVersion: TERMS_VERSION },
+  });
+}
+
+export async function sendOtpAction(method: LoginMethod, raw: string, acceptedTerms: boolean): Promise<ActionResult> {
+  if (acceptedTerms !== true) return { ok: false, error: TERMS_REQUIRED };
   if (method === "phone" && isDevTestPhone(raw)) {
     return { ok: true };
   }
@@ -74,8 +85,11 @@ export async function verifyOtpAction(
   method: LoginMethod,
   raw: string,
   rawCode: string,
+  acceptedTerms: boolean,
   next?: string,
 ): Promise<ActionResult & { redirectTo?: string }> {
+  if (acceptedTerms !== true) return { ok: false, error: TERMS_REQUIRED };
+
   // Dev-only shortcut: any bare 4-digit phone (e.g. "0001") with code "0000"
   // always logs in, no real OTP needed. One fixed code for every test phone,
   // so admin + any number of staff accounts can be exercised end to end
@@ -89,6 +103,7 @@ export async function verifyOtpAction(
       update: {},
       create: { phone },
     });
+    await recordTermsAcceptance(user.id);
     const session = await getSession();
     session.userId = user.id;
     await session.save();
@@ -104,6 +119,7 @@ export async function verifyOtpAction(
   const user = await verifyOtp(identifier, codeParsed.data);
   if (!user) return { ok: false, error: "Incorrect or expired code" };
 
+  await recordTermsAcceptance(user.id);
   const session = await getSession();
   session.userId = user.id;
   await session.save();

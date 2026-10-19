@@ -6,6 +6,11 @@ import { requireUser, getCurrentUser } from "@/lib/auth";
 import { getSlotsForMemberService, getAvailableDaysInRange } from "@/lib/booking-slots";
 import { reviewSchema } from "@/lib/validation";
 import type { ActionResult } from "@/app/login/actions";
+import { TERMS_VERSION } from "@/lib/terms";
+import { logSecurityEvent } from "@/lib/security-log";
+
+const MAX_PENDING_BOOKINGS_PER_USER = 3;
+const MAX_BOOKINGS_PER_USER_PER_DAY = 10;
 
 export async function getAvailableDatesAction(
   storeMemberId: string,
@@ -37,6 +42,7 @@ export async function getCurrentUserBriefAction(): Promise<{
   name: string | null;
   phone: string | null;
   email: string | null;
+  termsVersion: string | null;
 } | null> {
   return getCurrentUser();
 }
@@ -57,8 +63,37 @@ export async function createBookingAction(
   serviceId: string,
   dateIso: string,
   startMinute: number,
+  acceptTerms = false,
 ): Promise<ActionResult & { bookingId?: string; startAt?: string; endAt?: string }> {
   const user = await requireUser();
+
+  // Accounts that signed in before the current Terms version agree here
+  // instead, so nobody books under terms they never accepted.
+  if (user.termsVersion !== TERMS_VERSION) {
+    if (!acceptTerms) return { ok: false, error: "Tick the box to agree to the Terms before booking." };
+    await prisma.user.update({
+      where: { id: user.id },
+      data: { termsAcceptedAt: new Date(), termsVersion: TERMS_VERSION },
+    });
+  }
+
+  // Booking requests notify staff and, once accepted, send a paid SMS, so
+  // one account can't flood a business or the message budget.
+  const [waiting, createdToday] = await Promise.all([
+    prisma.booking.count({ where: { userId: user.id, status: "PENDING_CONFIRMATION" } }),
+    prisma.booking.count({ where: { userId: user.id, createdAt: { gte: new Date(Date.now() - 24 * 60 * 60 * 1000) } } }),
+  ]);
+  if (waiting >= MAX_PENDING_BOOKINGS_PER_USER) {
+    await logSecurityEvent("BOOKING_LIMIT_HIT", { userId: user.id, detail: `pending=${waiting}` });
+    return {
+      ok: false,
+      error: `You have ${waiting} bookings waiting for a business to confirm. Wait for a reply before booking more.`,
+    };
+  }
+  if (createdToday >= MAX_BOOKINGS_PER_USER_PER_DAY) {
+    await logSecurityEvent("BOOKING_LIMIT_HIT", { userId: user.id, detail: `today=${createdToday}` });
+    return { ok: false, error: "You've made the most bookings allowed in one day. Try again tomorrow." };
+  }
 
   const store = await prisma.store.findUnique({ where: { slug: storeSlug } });
   if (!store) return { ok: false, error: "Business not found" };

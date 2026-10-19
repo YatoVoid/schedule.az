@@ -10,6 +10,8 @@ import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Calendar } from "@/components/ui/calendar";
 import { AddToCalendar } from "@/components/add-to-calendar";
 import { dateToIso, isoToDate, formatMinutes } from "@/lib/schedule";
+import { TermsCheckbox } from "@/components/terms-checkbox";
+import { TERMS_VERSION } from "@/lib/terms";
 import { sendOtpAction, verifyOtpAction, type LoginMethod } from "@/app/login/actions";
 import {
   getAvailableDatesAction,
@@ -23,7 +25,7 @@ const DATE_WINDOW_DAYS = 90;
 
 type Professional = { id: string; name: string };
 type Service = { id: string; name: string; durationMin: number; priceAzn: string | null };
-type CurrentUser = { id: string; name: string | null; phone: string | null; email: string | null };
+type CurrentUser = { id: string; name: string | null; phone: string | null; email: string | null; termsVersion: string | null };
 
 type Step = "professional" | "service" | "datetime" | "contact" | "done";
 
@@ -104,10 +106,17 @@ export function BookingFlow({
     };
   }, [step, datesKey, professionalId, serviceId]);
 
-  function handleConfirm() {
+  function handleConfirm(acceptTerms: boolean) {
     if (!professionalId || !serviceId || startMinute === null) return;
     startTransition(async () => {
-      const result = await createBookingAction(storeSlug, professionalId, serviceId, dateToIso(date), startMinute);
+      const result = await createBookingAction(
+        storeSlug,
+        professionalId,
+        serviceId,
+        dateToIso(date),
+        startMinute,
+        acceptTerms,
+      );
       if (!result.ok) {
         toast.error(result.error);
         return;
@@ -311,7 +320,7 @@ function ContactStep({
   user: CurrentUser | null;
   summary: { professional: string; service: string; price: string | null; date: Date; startMinute: number | null };
   onLoggedIn: (user: CurrentUser) => void;
-  onConfirm: () => void;
+  onConfirm: (acceptTerms: boolean) => void;
   onBack: () => void;
   isPending: boolean;
 }) {
@@ -320,6 +329,7 @@ function ContactStep({
   const [identifier, setIdentifier] = useState("");
   const [code, setCode] = useState("");
   const [name, setName] = useState("");
+  const [acceptedTerms, setAcceptedTerms] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [busy, startTransition] = useTransition();
 
@@ -330,7 +340,7 @@ function ContactStep({
   function sendCode() {
     setError(null);
     startTransition(async () => {
-      const result = await sendOtpAction(method, identifier);
+      const result = await sendOtpAction(method, identifier, acceptedTerms);
       if (!result.ok) {
         setError(result.error);
         return;
@@ -342,7 +352,7 @@ function ContactStep({
   function verify() {
     setError(null);
     startTransition(async () => {
-      const result = await verifyOtpAction(method, identifier, code);
+      const result = await verifyOtpAction(method, identifier, code, acceptedTerms);
       if (!result.ok) {
         setError(result.error);
         return;
@@ -387,7 +397,14 @@ function ContactStep({
       {user && !needsName ? (
         <div className="flex flex-col gap-3">
           <p className="text-sm text-muted-foreground">Booking as {user.name}</p>
-          <Button onClick={onConfirm} disabled={isPending} className="h-12 text-base">
+          {user.termsVersion !== TERMS_VERSION && (
+            <TermsCheckbox id="booking-terms-confirm" checked={acceptedTerms} onChange={setAcceptedTerms} />
+          )}
+          <Button
+            onClick={() => onConfirm(acceptedTerms)}
+            disabled={isPending || (user.termsVersion !== TERMS_VERSION && !acceptedTerms)}
+            className="h-12 text-base"
+          >
             {isPending ? "Booking..." : "Confirm booking"}
           </Button>
         </div>
@@ -418,10 +435,11 @@ function ContactStep({
             onChange={(e) => setIdentifier(e.target.value)}
             className="h-12 text-base"
           />
+          <TermsCheckbox id="booking-terms" checked={acceptedTerms} onChange={setAcceptedTerms} />
           {error && <p className="text-sm text-destructive">{error}</p>}
           <Button
             onClick={sendCode}
-            disabled={busy || (!isDevBypass && identifier.trim().length < 5)}
+            disabled={busy || !acceptedTerms || (!isDevBypass && identifier.trim().length < 5)}
             className="h-12 text-base"
           >
             Send code

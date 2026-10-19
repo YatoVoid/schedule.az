@@ -6,6 +6,7 @@ import { PhoneIcon, MailIcon, KeyRoundIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { TermsCheckbox } from "@/components/terms-checkbox";
 import { sendOtpAction, verifyOtpAction, type LoginMethod } from "./actions";
 
 export function LoginForm({ next }: { next?: string }) {
@@ -14,6 +15,7 @@ export function LoginForm({ next }: { next?: string }) {
   const [step, setStep] = useState<"identifier" | "code">("identifier");
   const [identifier, setIdentifier] = useState("");
   const [code, setCode] = useState("");
+  const [acceptedTerms, setAcceptedTerms] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
 
@@ -29,7 +31,7 @@ export function LoginForm({ next }: { next?: string }) {
   function handleSendCode() {
     setError(null);
     startTransition(async () => {
-      const result = await sendOtpAction(method, identifier);
+      const result = await sendOtpAction(method, identifier, acceptedTerms);
       if (!result.ok) {
         setError(result.error);
         return;
@@ -41,7 +43,7 @@ export function LoginForm({ next }: { next?: string }) {
   function handleVerify() {
     setError(null);
     startTransition(async () => {
-      const result = await verifyOtpAction(method, identifier, code, next);
+      const result = await verifyOtpAction(method, identifier, code, acceptedTerms, next);
       if (!result.ok) {
         setError(result.error);
         return;
@@ -51,7 +53,7 @@ export function LoginForm({ next }: { next?: string }) {
   }
 
   if (step === "identifier") {
-    const canSubmit = isDevBypass || identifier.trim().length >= (method === "phone" ? 9 : 5);
+    const canSubmit = acceptedTerms && (isDevBypass || identifier.trim().length >= (method === "phone" ? 9 : 5));
     return (
       <form
         className="flex flex-col gap-4"
@@ -93,6 +95,8 @@ export function LoginForm({ next }: { next?: string }) {
             </div>
           </div>
         )}
+
+        <TermsCheckbox id="login-terms" checked={acceptedTerms} onChange={setAcceptedTerms} />
 
         {error && <p className="text-sm text-destructive">{error}</p>}
 

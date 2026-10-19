@@ -37,7 +37,7 @@ class JasminSmsProvider implements SmsProvider {
       to: toPhone,
       content: message,
     });
-    const response = await fetch(`${this.baseUrl}/send?${params}`);
+    const response = await fetch(`${this.baseUrl}/send?${params}`, { signal: AbortSignal.timeout(10_000) });
     const body = await response.text();
     if (!response.ok || !body.startsWith("Success")) {
       throw new Error(`Jasmin send failed: ${body}`);

@@ -13,7 +13,7 @@ export default async function TermsPage() {
       <SiteHeader loggedIn={!!currentUser} memberships={memberships} />
       <main className="mx-auto flex w-full max-w-3xl flex-1 flex-col gap-6 px-4 py-8">
         <h1 className="font-heading text-2xl font-medium tracking-tight">Terms of Service</h1>
-        <p className="text-sm text-muted-foreground">Last updated August 25, 2026.</p>
+        <p className="text-sm text-muted-foreground">Last updated October 19, 2026.</p>
 
         <section className="flex flex-col gap-2">
           <h2 className="font-heading text-lg font-medium">What Schedule.az is</h2>
@@ -43,6 +43,11 @@ export default async function TermsPage() {
             and the business.
           </p>
           <p>
+            To keep the service usable for businesses, an account can have a limited number of bookings
+            waiting for confirmation at once, and verification codes are limited per number, email
+            address and network.
+          </p>
+          <p>
             You can only leave a rating for a business after a booking there is marked completed. Reviews
             must reflect an actual experience with that business. We may remove a review that&apos;s
             fake, abusive, or violates someone&apos;s rights.
@@ -69,6 +74,10 @@ export default async function TermsPage() {
             on Schedule.az for the purpose of running the directory and booking flow. Don&apos;t upload
             anything you don&apos;t have the right to post.
           </p>
+          <p>
+            Photos are checked automatically when you upload them, and explicit images are refused. We
+            may also remove any photo that isn&apos;t suitable for a public business directory.
+          </p>
         </section>
 
         <section className="flex flex-col gap-2">
@@ -86,7 +95,7 @@ export default async function TermsPage() {
           <h2 className="font-heading text-lg font-medium">Changes to these terms</h2>
           <p>
             We may update these terms as the product changes. If a change is material, we&apos;ll update
-            the date above and, where practical, let logged-in users know before it takes effect.
+            the date above and ask you to agree to the new version the next time you sign in or book.
           </p>
         </section>
 

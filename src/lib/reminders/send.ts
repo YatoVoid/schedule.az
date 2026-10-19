@@ -3,6 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { AZT_OFFSET_MS } from "@/lib/baku-time";
 import { smsProvider } from "@/lib/sms";
 import { emailProvider } from "@/lib/email";
+import { reserveSend, SendBudgetError } from "@/lib/send-budget";
 import { pickChannel } from "@/lib/reminders/channel";
 import { renderReminder, type ReminderContext } from "@/lib/reminders/messages";
 import { unsubscribeUrl } from "@/lib/unsubscribe";
@@ -159,6 +160,20 @@ async function processReminder(row: ReminderRow, now: Date): Promise<Outcome> {
   }
 
   const message = renderReminder(ctx);
+  try {
+    await reserveSend({
+      channel,
+      recipient: channel === "SMS" ? (row.user.phone as string) : (row.user.email as string),
+      kind: "REMINDER",
+    });
+  } catch (err) {
+    // Out of budget for now: retry in an hour without spending an attempt,
+    // so a busy day delays reminders instead of dropping them.
+    if (err instanceof SendBudgetError) {
+      return defer(row.id, new Date(now.getTime() + 60 * 60 * 1000), err.message, row.attempts);
+    }
+    throw err;
+  }
   try {
     if (channel === "SMS") {
       await smsProvider.send(row.user.phone as string, message.text);

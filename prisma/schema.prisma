@@ -38,6 +38,11 @@ model User {
   // src/lib/unsubscribe.ts).
   winbackOptOut Boolean @default(false)
 
+  // Clickwrap record: when this account last ticked "I agree to the Terms"
+  // and which version of /terms it agreed to (TERMS_VERSION in src/lib/terms.ts).
+  termsAcceptedAt DateTime?
+  termsVersion    String?
+
   memberships StoreMember[]
   bookings    Booking[]
   favorites   Favorite[]
@@ -212,6 +217,25 @@ enum SecurityEventType {
   STAFF_ADDED
   STAFF_REMOVED
   PERMISSION_DENIED
+  SEND_BUDGET_HIT
+  BOOKING_LIMIT_HIT
+  IMAGE_REJECTED
+}
+
+// One row per SMS or email actually handed to a provider. Backs the daily
+// spending caps in src/lib/send-budget.ts, so the counts survive restarts
+// and cover every sender (login codes and reminders alike).
+model MessageSend {
+  id        String          @id @default(cuid())
+  channel   ReminderChannel
+  recipient String
+  kind      String
+  ip        String?
+  createdAt DateTime        @default(now())
+
+  @@index([channel, createdAt])
+  @@index([recipient, createdAt])
+  @@index([ip, createdAt])
 }
 
 // Queryable trail for the auth/admin events worth investigating after the

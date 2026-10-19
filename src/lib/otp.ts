@@ -3,6 +3,8 @@ import { prisma } from "@/lib/prisma";
 import { smsProvider } from "@/lib/sms";
 import { emailProvider } from "@/lib/email";
 import { logSecurityEvent } from "@/lib/security-log";
+import { reserveSend, SendBudgetError } from "@/lib/send-budget";
+import { getClientIp } from "@/lib/client-ip";
 
 const OTP_TTL_MINUTES = 10;
 const OTP_WINDOW_MINUTES = 10;
@@ -13,9 +15,8 @@ const OTP_MAX_PER_WINDOW = 3;
 // bounds the total SMS bill when an attacker cycles through many numbers
 // (each of which would otherwise get its own 3 free sends). Set well above
 // real launch traffic for Baku so it only bites during an actual burst.
-// Per-IP throttling is the missing third layer and should be added once the
-// app is behind the planned nginx proxy that sets a trustworthy
-// X-Forwarded-For; until then a client IP here can't be trusted.
+// Per-IP limits and the daily SMS/email spending caps live in
+// src/lib/send-budget.ts and are checked before any code is created.
 const OTP_GLOBAL_PER_MINUTE = 20;
 const OTP_GLOBAL_PER_HOUR = 200;
 // Caps guesses against a single issued code, independent of codeHash, so an
@@ -36,8 +37,8 @@ function generateCode() {
 }
 
 export class OtpRateLimitError extends Error {
-  constructor() {
-    super("Too many codes requested. Try again shortly.");
+  constructor(message = "Too many codes requested. Try again shortly.") {
+    super(message);
     this.name = "OtpRateLimitError";
   }
 }
@@ -57,10 +58,6 @@ async function findOrCreateUser(identifier: Identifier) {
   });
 }
 
-// Per-identifier rate limit is the primary defense against SMS-cost abuse
-// and fake-booking spam. IP-based limiting is a further hardening step best
-// added once the app sits behind a known reverse proxy that reports a
-// trustworthy client IP.
 export async function requestOtp(identifier: Identifier) {
   const now = Date.now();
 
@@ -71,6 +68,20 @@ export async function requestOtp(identifier: Identifier) {
   if (globalLastMinute >= OTP_GLOBAL_PER_MINUTE || globalLastHour >= OTP_GLOBAL_PER_HOUR) {
     await logSecurityEvent("OTP_LOCKED", { detail: "global OTP rate ceiling hit" });
     throw new OtpRateLimitError();
+  }
+
+  // Reserved before the account row is created, so a flood of made-up
+  // numbers is stopped by the budget instead of filling the User table.
+  try {
+    await reserveSend({
+      channel: identifier.type === "phone" ? "SMS" : "EMAIL",
+      recipient: identifier.value,
+      kind: "OTP",
+      ip: await getClientIp(),
+    });
+  } catch (err) {
+    if (err instanceof SendBudgetError) throw new OtpRateLimitError(err.message);
+    throw err;
   }
 
   const user = await findOrCreateUser(identifier);
