@@ -18,7 +18,15 @@ jobs:
           git fetch origin master
           git reset --hard origin/master
           npm ci
-          npx prisma migrate deploy
+          # The running app connects as a role that can only read and write
+          # rows. Schema changes need the owner role, kept in
+          # MIGRATE_DATABASE_URL. Without it, migrate as DATABASE_URL.
+          MIGRATE_URL=$(grep -E '^MIGRATE_DATABASE_URL=' .env | cut -d= -f2- | tr -d '"' || true)
+          if [ -n "$MIGRATE_URL" ]; then
+            DATABASE_URL="$MIGRATE_URL" npx prisma migrate deploy
+          else
+            npx prisma migrate deploy
+          fi
           npm run build
 
       # Runtime secrets that aren't in git. No-op until the repo secrets are
