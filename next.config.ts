@@ -9,6 +9,13 @@ const securityHeaders = [
 ];
 
 const nextConfig: NextConfig = {
+  // Photo uploads go through server actions, whose default body cap is 1 MB.
+  // The largest accepted file is a gallery photo at 8 MB
+  // (src/app/admin/[slug]/settings/actions.ts); the extra 1 MB covers the
+  // multipart framing. nginx's client_max_body_size must be at least this.
+  experimental: {
+    serverActions: { bodySizeLimit: "9mb" },
+  },
   async headers() {
     return [{ source: "/:path*", headers: securityHeaders }];
   },
