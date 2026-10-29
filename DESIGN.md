@@ -75,3 +75,8 @@ rounded:
 
 - No claim on a page that isn't true today. The Figma copy about exhibitions, open-air tables and "spring day passes" was rewritten to describe booking. The mockup's notification toggles and Language/Region/Currency rows were left out because nothing backs them yet.
 - No fake stats or social proof.
+- Stay inside the palette family. New accents are shades of the existing colors, never a new hue. No pure black or slate backgrounds, no neon glows.
+- No gradient text, hype badges, floating dashboard mockups, decorative glassmorphism, animated gradient borders or background grid patterns.
+- No generic feature grids. If a section would still work with another product's name swapped in, rewrite it for this one.
+- Plain is fine when plain is honest. Remove anything whose only job is to look premium.
+- Before shipping a page: only palette colors, every claim true today, nothing that could be pasted onto another product.

@@ -45,7 +45,7 @@ fixed before shipping.
 **Section 3 — register/login + mobile bottom nav.** `/login`
 (`src/app/login/page.tsx`) is now a split-screen layout at `lg+`: a solid
 madder-red brand panel (not sira's gradient — restrained, one hue, matches
-`CLAUDE.md`'s palette-family rule) with the logo mark in an ivory circular
+the palette-family rule in `DESIGN.md`) with the logo mark in an ivory circular
 chip, a real one-line value proposition ("Book your next appointment in
 Baku." / "Barbershops, salons, spas and more, confirmed by SMS, no
 back-and-forth over WhatsApp." — true today, not aspirational), top-left;
@@ -81,7 +81,7 @@ revisited later.
 - District and "available today" filters were **not** added — there's no
   district field or real-time availability-per-store query backing them
   yet, and faking either would violate the "every claim on the page true
-  right now" rule in `CLAUDE.md`'s design policy. Minimum-rating filter
+  right now" rule in `DESIGN.md`. Minimum-rating filter
   wasn't added either, for the same reason "Best reviews" sort is disabled.
 - Stores without saved coordinates stay in the list (still numbered in
   sequence) but get no map pin — there's no forced/fake location.

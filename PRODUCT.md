@@ -59,7 +59,7 @@ Purpose-built for how Baku service businesses actually operate today (WhatsApp-b
 ## Brand Commitments
 
 - Name: Schedule.az. Logo mark in `public/logo-mark.png`, circular favicon in `src/app/icon.png`.
-- Visual identity: "City in Bloom" from the designer's Figma file (2026-10-19), replacing the earlier Carpet Register. Tokens and rules in `DESIGN.md`; `CLAUDE.md` names the same palette.
+- Visual identity: "City in Bloom" from the designer's Figma file (2026-10-19), replacing the earlier Carpet Register. Tokens and rules in `DESIGN.md`.
 - UI copy is English only for this pass. Store names, categories, and descriptions are often Azerbaijani or Russian (Cyrillic + Azerbaijani diacritics), entered by real business owners — typography must render both cleanly even though UI chrome stays English.
 
 ## Evidence on Hand
